@@ -1,0 +1,3 @@
+#TYPE System.Management.Automation.PSCustomObject
+"vendor","audits","Type","language","Remaining","VendorIndex","VendorName","DailyRemaining"
+"ClientTool-CallCaps","485","Sales","English","485","3","ClientTool-CallCaps","48"

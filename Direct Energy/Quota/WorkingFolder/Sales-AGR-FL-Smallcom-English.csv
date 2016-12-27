@@ -1,0 +1,3 @@
+#TYPE System.Management.Automation.PSCustomObject
+"vendor","audits","Type","language","Remaining","VendorIndex","VendorName","DailyRemaining"
+"AGR-FL-Smallcom","6","Sales","English","24","1","AGR-FL-Smallcom","2"

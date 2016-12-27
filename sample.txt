@@ -1,0 +1,113 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using WinSCP;
+
+namespace WinSCPTreeDL
+{
+
+    class FolderDL
+    {
+        public static int Main()
+        {
+            try
+            {
+                // Initialize Import Variables
+                ConfigData myconfigData = new ConfigData();
+                
+                    // Get CSV location from text file
+                    StreamReader csvLocationReader = new StreamReader
+                        ("config.txt");
+                    string line = "";
+                    while (line != null)
+                    {
+                        line = csvLocationReader.ReadLine();
+                        if (line != null)
+                            myconfigData.configFolder = line;
+                        Console.WriteLine(myconfigData.configFolder);
+                    }
+                    csvLocationReader.Close();
+                
+
+                //string[] result = File.ReadAllLines("a.txt");
+                //string localPath = @"C:\Scripts\Calls";
+                //string remotePath = "/D/Direct Energy/AGR-FL";
+                //string newDLFolder = string.Empty;
+
+                // Setup session options
+                //SessionOptions sessionOptions = new SessionOptions
+                //{
+                //    Protocol = Protocol.Sftp,
+                //    HostName = "76.7.91.201",
+                //    UserName = "ckurlinski",
+                //    Password = "Cr!ver$2005",
+                //    SshHostKeyFingerprint = "ssh-rsa 1024 3a:17:ef:dd:7b:9f:09:bb:92:87:49:c3:74:cd:e8:00"
+                //};
+
+                //using (Session session = new Session())
+                //{
+                //    // Connect
+                //    session.Open(sessionOptions);
+
+                //    // Enumerate files and directories to download
+                //    IEnumerable<RemoteFileInfo> fileInfos =
+                //        session.EnumerateRemoteFiles(
+                //            remotePath, null,
+                //            EnumerationOptions.EnumerateDirectories | EnumerationOptions.AllDirectories);
+
+                //    foreach (RemoteFileInfo fileInfo in fileInfos)
+                //    {
+                //        string localFilePath = session.TranslateRemotePathToLocal(fileInfo.FullName, remotePath, localPath);
+
+                //        if (fileInfo.IsDirectory)
+                //        {
+                //            // Create local subdirectory, if it does not exist yet
+                //            if (!Directory.Exists(localFilePath))
+                //            {
+                //                // Directory.CreateDirectory(localFilePath);
+                //                newDLFolder = localFilePath;
+                //                Console.WriteLine(localFilePath);
+                //                Console.WriteLine(newDLFolder);
+                //            }
+                //        }
+                //        //// A static method is also available.
+                //        //bool areEqual = String.Equals(localFilePath, newDLFolder, StringComparison.Ordinal);
+                //        //if (areEqual)
+                //        //{
+                //        //    Console.WriteLine(string.Format("Downloading file {0}...", fileInfo.FullName));
+                //        //    // Download file
+                //        //    TransferOperationResult transferResult =
+                //        //        session.GetFiles(session.EscapeFileMask(fileInfo.FullName), localFilePath);
+
+                //        //    // Did the download succeeded?
+                //        //    if (!transferResult.IsSuccess)
+                //        //    {
+                //        //        // Print error (but continue with other files)
+                //        //        Console.WriteLine(string.Format("Error downloading file {0}: {1}", fileInfo.FullName, transferResult.Failures[0].Message));
+                //        //    }
+                //        //}
+                //    }
+                //    Console.WriteLine("Done!");
+                //    Console.ReadLine();
+                //}
+
+                return 0;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error: {0}", e);
+                return 1;
+            }
+            
+        }
+    }
+
+    class ConfigData
+    {
+        public string configFolder { get; set; }
+        public string configFile { get; set; }
+    }
+
+
+
+}

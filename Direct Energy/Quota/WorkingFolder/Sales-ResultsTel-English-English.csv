@@ -1,0 +1,3 @@
+#TYPE System.Management.Automation.PSCustomObject
+"vendor","audits","Type","language","Remaining","VendorIndex","VendorName","DailyRemaining"
+"ResultsTel-English","106","Sales","English","124","6","ResultsTel-English","12"

@@ -1,0 +1,3 @@
+#TYPE System.Management.Automation.PSCustomObject
+"vendor","audits","Type","language","Remaining","VendorIndex","VendorName","DailyRemaining"
+"IQOR-TX-Bounce","62","Sales","English","38","4","IQOR-TX-Bounce","4"
