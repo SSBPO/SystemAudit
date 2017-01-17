@@ -17,17 +17,13 @@ namespace WinSCPTreeDL
         {
 
             string excelLicense = "EQU2-1K6F-UZPP-4MOX";
-            string SFTPTransferResult = "";  
-            int tType = 0;
-            string tConfig = "";
-
+            string SFTPTransferResult = "";
+            int configFiles = 0;
 
             ConfigData xxx_configData = new ConfigData();
             FolderDLApp xxx_downLoadApp = new FolderDLApp();
 
-            SpreadsheetInfo.SetLicense(excelLicense);
-           // readConfig(xxx_configData.ConfigFolder);
-
+            SpreadsheetInfo.SetLicense(excelLicense);    
             Console.Clear();
 
             Console.WriteLine("############################################################################################");
@@ -35,36 +31,25 @@ namespace WinSCPTreeDL
             Console.WriteLine("############################################################################################");
             Console.WriteLine();
             Console.WriteLine();
-
            
-           
-            string[] fileEntries = Directory.GetFiles(xxx_configData.ConfigFolder);
+            string[] fileEntries = Directory.GetFiles(xxx_configData.configFDpath);
 
-            int configFiles = 0;
+            if(fileEntries.Count() > 1)
+                Console.WriteLine("There are " + fileEntries.Count() + " configuration files in the directory.");
+            else
+            {
+                Console.WriteLine("There is " + fileEntries.Count() + " configuration file in the directory.");
+            }
 
-            foreach(string file in fileEntries)
+            foreach (string file in fileEntries)
             {
                 configFiles = configFiles + 1;
-                Console.WriteLine();
-                Console.WriteLine();
-                Console.WriteLine("Welcome to FileDL, please select a TFTP transaction type to proceed:");
-                Console.WriteLine();
-                Console.WriteLine("1. Download");
-                Console.WriteLine("2. Upload");
-                Console.WriteLine("3. Synchronize");
-                Console.WriteLine();
-
-                tType = int.Parse(Console.ReadLine());
-                Console.WriteLine();
-                Console.WriteLine("There are " + fileEntries.Count() + " configuration files.");
-                Console.WriteLine();
-                Console.WriteLine();
-                Console.WriteLine(configFiles + ". " + file + ":");
-                Console.WriteLine();
-
-
                 xxx_configData = FolderDLApp.readConfig(file);
-                
+               
+                Console.WriteLine();
+                Console.WriteLine("Processing file " + configFiles);
+                Console.WriteLine();
+                Console.WriteLine("     SFTPTransType:  " + xxx_configData.SFTPTransType.Replace("1", "Download"));
                 Console.WriteLine("     SFTPHostName:   " + xxx_configData.SFTPHostName);
                 Console.WriteLine("     SFTPUserName:   " + xxx_configData.SFTPUserName);
                 Console.WriteLine("     SFTPPassword:   " + xxx_configData.SFTPPassword);
@@ -73,37 +58,42 @@ namespace WinSCPTreeDL
                 Console.WriteLine("     SFTPremotePath: " + xxx_configData.SFTPremotePath);
                 Console.WriteLine();
 
-                Console.WriteLine("Proceed? y/n:");
-                tConfig = Console.Read().ToString();
-                Console.WriteLine();
-                Console.WriteLine();
-                Console.WriteLine();
-
-                if (tConfig == "121")
+                switch (xxx_configData.SFTPTransType)
                 {
-                    switch (tType)
-                    {
-                        case 1:
-                            Console.WriteLine("Download  files from TFTP server.");
-                            SFTPTransferResult = SFTPTransfers.SFTPDownload(xxx_configData.SFTPHostName, xxx_configData.SFTPUserName, xxx_configData.SFTPCusName, xxx_configData.SFTPPassword, xxx_configData.SFTPlocalPath, xxx_configData.SFTPremotePath);
-                            break;
-                        case 2:
-                            Console.WriteLine("Upload files to TFTP server.");
-                            SFTPTransferResult = SFTPTransfers.SFTPUpload(xxx_configData.SFTPHostName, xxx_configData.SFTPUserName, xxx_configData.SFTPCusName, xxx_configData.SFTPPassword, xxx_configData.SFTPlocalPath, xxx_configData.SFTPremotePath);
-                            break;
-                        case 3:
-                            Console.WriteLine("Sychrinize local folders to remote TFTP server.");
-                            SFTPTransferResult = SFTPTransfers.SFTPsynchronize(xxx_configData.SFTPHostName, xxx_configData.SFTPUserName, xxx_configData.SFTPCusName, xxx_configData.SFTPPassword, xxx_configData.SFTPlocalPath, xxx_configData.SFTPremotePath);
-                            break;
-                        default:
-                            Console.WriteLine("Sorry, invalid selection.");
-                            break;
-                    }
+                    case "1":
+                        Console.WriteLine("Downloading files from TFTP server...");
+                        Console.WriteLine();
+                        SFTPTransferResult = SFTPTransfers.SFTPDownload(xxx_configData.SFTPHostName, xxx_configData.SFTPUserName, xxx_configData.SFTPCusName, xxx_configData.SFTPPassword, xxx_configData.SFTPlocalPath, xxx_configData.SFTPremotePath, xxx_configData.SFTPSshHostKey);
+                        Console.WriteLine();
+                        break;
+                    case "2":
+                        Console.WriteLine("Uploading files to TFTP server...");
+                        Console.WriteLine();
+                        SFTPTransferResult = SFTPTransfers.SFTPUploads(xxx_configData.SFTPHostName, xxx_configData.SFTPUserName, xxx_configData.SFTPCusName, xxx_configData.SFTPPassword, xxx_configData.SFTPlocalPath, xxx_configData.SFTPremotePath, xxx_configData.SFTPSshHostKey);
+                        Console.WriteLine();
+                        break;
+                    case "3":
+                        Console.WriteLine("Sychrinizing local folders to remote TFTP server...");
+                        Console.WriteLine();
+                        SFTPTransferResult = SFTPTransfers.SFTPsynchronize(xxx_configData.SFTPHostName, xxx_configData.SFTPUserName, xxx_configData.SFTPCusName, xxx_configData.SFTPPassword, xxx_configData.SFTPlocalPath, xxx_configData.SFTPremotePath, xxx_configData.SFTPSshHostKey);
+                        Console.WriteLine();
+                        break;
+                    default:
+                        Console.WriteLine("Sorry, invalid transaction type.");
+                        break;
                 }
+
+                SFTPTransfers.RenameFiles(xxx_configData.SFTPlocalPath, xxx_configData.SFTPCusName);
+                Console.WriteLine();
+                Console.WriteLine();
+                Console.WriteLine(SFTPTransferResult);
+                Console.WriteLine("Transaction completed.");
+                Console.WriteLine();
+                
             }
 
-            Console.WriteLine();
-            Console.WriteLine("Transaction Complete!!!");
+            
+            Console.ReadLine();
 
         }
 
@@ -163,11 +153,21 @@ namespace WinSCPTreeDL
                 {
                     string dataOption = (dataItem["Option"].ToString().Trim());
                     string dataValue = (dataItem["Value"].ToString().Trim());
+                
 
                     switch (dataOption)
                     {
+                        case "SFTPTransType":
+                            xxx_configData.SFTPTransType = dataValue;
+                            break;
+                        case "ConfigFolder":
+                        xxx_configData.configFDpath = dataValue;
+                        break;
                         case "SFTPHostName":
                             xxx_configData.SFTPHostName = dataValue;
+                            break;
+                        case "SFTPSshHostKey":
+                            xxx_configData.SFTPSshHostKey = dataValue;
                             break;
                         case "SFTPUserName":
                             xxx_configData.SFTPUserName = dataValue;
@@ -182,7 +182,8 @@ namespace WinSCPTreeDL
                                 // Create local subdirectory, if it does not exist yet
                                 if (!Directory.Exists(dataValue))
                                 {
-                                    Directory.CreateDirectory(dataValue);
+                            Directory.Delete(dataValue);
+                            Directory.CreateDirectory(dataValue);
                                 }
                         xxx_configData.SFTPlocalPath = dataValue;
                             break;
@@ -200,29 +201,16 @@ namespace WinSCPTreeDL
 
         public class ConfigData
         {
-            private string configFolder = "";
+            public string configFDpath = @"C:\config";            
 
+            public string SFTPTransType { get; set; }
             public string SFTPHostName { get; set; }
             public string SFTPCusName { get; set; }
             public string SFTPUserName { get; set; }
             public string SFTPPassword { get; set; }
             public string SFTPlocalPath { get; set; }
             public string SFTPremotePath { get; set; }
-
-
-            public ConfigData()
-            {
-                configFolder = @"C:\Config";
-                
-            }
-            public string ConfigFolder
-            {
-                get
-                {
-                    return configFolder;
-                }
-
-            }
+            public string SFTPSshHostKey { get; set; }       
         }
 
         public class XLSXImport
@@ -262,7 +250,7 @@ namespace WinSCPTreeDL
         public class SFTPTransfers
         {
 
-            public static string SFTPDownload(string SFTPHostName, string SFTPUserName, string SFTPCustName, string SFTPPassword, string SFTPlocalPath, string SFTPremotePath)
+            public static string SFTPDownload(string SFTPHostName, string SFTPUserName, string SFTPCustName, string SFTPPassword, string SFTPlocalPath, string SFTPremotePath, string SFTPHostKey)
             {
                 try
                 {
@@ -275,14 +263,14 @@ namespace WinSCPTreeDL
                         HostName = SFTPHostName,
                         UserName = SFTPUserName,
                         Password = SFTPPassword,
-                        SshHostKeyFingerprint = "ssh-rsa 1024 3a:17:ef:dd:7b:9f:09:bb:92:87:49:c3:74:cd:e8:00"
+                        SshHostKeyFingerprint = SFTPHostKey
                     };
 
                     using (Session session = new Session())
                     {
                         session.FileTransferred += FileTransferred;
-                        // Connect
                         session.Open(sessionOptions);
+
                         // Enumerate files and directories to download
                         IEnumerable<RemoteFileInfo> fileInfos =
                             session.EnumerateRemoteFiles(
@@ -300,9 +288,7 @@ namespace WinSCPTreeDL
                                 {
                                     Directory.CreateDirectory(localFilePath);
                                     newDLFolder = localFilePath;
-                                    Console.WriteLine("Creating " + localFilePath);
-                                   // Console.WriteLine(newDLFolder);
-                                    Console.WriteLine();
+
                                 }
                             }
 
@@ -327,121 +313,130 @@ namespace WinSCPTreeDL
                             }
                         }
 
-                      Console.WriteLine("Download complete!");
-                      Console.ReadLine();
+                        Console.WriteLine("Download completed. ");
+                        Console.WriteLine("Renaming files...");
 
+                        RenameFiles(SFTPlocalPath, SFTPCustName);
+                        Console.WriteLine("Renaming files was sucessful!");
                     }
 
-                    RenameFiles(SFTPlocalPath, SFTPCustName);
-                    return "Download successful";
+
+                    return "Download successful.";
                 }
 
                 catch (Exception e)
                 {
                     Console.WriteLine("Error: {0}", e);
-                    return "Download UNsuccessful";
+                    return "Download Unsuccessful";
                 }
 
-              
+
             }
 
-            public static string SFTPUpload(string SFTPHostName, string SFTPUserName, string SFTPCustName, string SFTPPassword, string SFTPlocalPath, string SFTPremotePath)
+            public static string SFTPUploads(string SFTPHostName, string SFTPUserName, string SFTPCustName, string SFTPPassword, string SFTPlocalPath, string SFTPremotePath, string SFTPHostKey)
             {
-
-                string newDLFolder = string.Empty;
-
-                SessionOptions sessionOptions = new SessionOptions
+                try
                 {
-                    Protocol = Protocol.Sftp,
-                    HostName = SFTPHostName,
-                    UserName = SFTPUserName,
-                    Password = SFTPPassword,
-                    SshHostKeyFingerprint = "ssh-rsa 1024 3a:17:ef:dd:7b:9f:09:bb:92:87:49:c3:74:cd:e8:00"
-                };
 
+                    string newDLFolder = string.Empty;
 
-                using (Session session = new Session())
-                {
-                    session.FileTransferred += FileTransferred;
-
-                    // Connect
-                    session.Open(sessionOptions);           
-
-                    // Upload files
-                    TransferOptions transferOptions = new TransferOptions();
-                    transferOptions.TransferMode = TransferMode.Binary;
-
-                    TransferOperationResult transferResult;
-                    transferResult = session.PutFiles(SFTPlocalPath, SFTPremotePath, false, transferOptions);
-
-                    // Throw on any error
-                    transferResult.Check();
-
-                    //// Print results
-                    //foreach (TransferEventArgs transfer in transferResult.Transfers)
-                    //{
-                    //    Console.WriteLine("Upload of {0} succeeded", transfer.Touch);
-                    //    Console.WriteLine();
-                    //}
-                   
-                }
-
-                Console.WriteLine("Upload complete!");
-                Console.ReadLine();
-
-                return "Upload successful!";
-
-                
-
-            }         
-            
-            public static string SFTPsynchronize(string SFTPHostName, string SFTPUserName, string SFTPCustName, string SFTPPassword, string SFTPlocalPath, string SFTPremotePat)
-            {
-
-                string newDLFolder = string.Empty;
-              
-
-
-                SessionOptions sessionOptions = new SessionOptions
-                {
-                    Protocol = Protocol.Sftp,
-                    HostName = SFTPHostName,
-                    UserName = SFTPUserName,
-                    Password = SFTPPassword,
-                    SshHostKeyFingerprint = "ssh-rsa 1024 3a:17:ef:dd:7b:9f:09:bb:92:87:49:c3:74:cd:e8:00"
-                };
-
-
-                Console.WriteLine("Synchronizing files...");
-                
-                using (Session session = new Session())
-                {
-                    session.FileTransferred += FileTransferred;
-                    // Connect
-                    session.Open(sessionOptions);
-
-                    // Upload files
-                    TransferOptions transferOptions = new TransferOptions();
-                    transferOptions.TransferMode = TransferMode.Binary;
-                    SynchronizationResult syncResult;
-                    syncResult = session.SynchronizeDirectories(SynchronizationMode.Both, SFTPlocalPath, SFTPremotePat, false);
-
-                    foreach (TransferEventArgs transfer in syncResult.Downloads)
+                    SessionOptions sessionOptions = new SessionOptions
                     {
-                        Console.WriteLine();
-                        Console.WriteLine("{0} folders were synchronized.", transfer.FileName.Count());                   
-                        // System.Threading.Thread.Sleep(5000);
-                        syncResult.Check();
+                        Protocol = Protocol.Sftp,
+                        HostName = SFTPHostName,
+                        UserName = SFTPUserName,
+                        Password = SFTPPassword,
+                        SshHostKeyFingerprint = SFTPHostKey
+                    };
+
+
+                    using (Session session = new Session())
+                    {
+                        session.FileTransferred += FileTransferred;
+                        session.Open(sessionOptions);
+
+                        // Upload files
+                        TransferOptions transferOptions = new TransferOptions();
+                        transferOptions.TransferMode = TransferMode.Binary;
+                        TransferOperationResult transferResult;
+                        transferResult = session.PutFiles(SFTPlocalPath, SFTPremotePath, false, transferOptions);
+                        transferResult.Check();
+                        //Add try catch
+                        foreach (TransferEventArgs transfer in transferResult.Transfers)
+                        {
+                            Console.WriteLine("Upload of {0} succeeded", transfer.Touch);
+                            Console.WriteLine();
+                        }
+
                     }
+
+                    Console.WriteLine("Upload complete!");
+                    //  Console.ReadLine();
+
+                    return "Upload successful.";
                 }
 
-                Console.WriteLine("Sychronizing complete!");
-                Console.ReadLine();
+                catch (Exception e)
+                {
+                    Console.WriteLine("Error: {0}", e);
+                    return "Upload Unsuccessful";
+                }
 
-                return "Sychronizing was successful";
 
             }
 
+            public static string SFTPsynchronize(string SFTPHostName, string SFTPUserName, string SFTPCustName, string SFTPPassword, string SFTPlocalPath, string SFTPremotePath, string SFTPHostKey)
+            {
+                try
+                {
+
+                    string newDLFolder = string.Empty;
+
+                    SessionOptions sessionOptions = new SessionOptions
+                    {
+                        Protocol = Protocol.Sftp,
+                        HostName = SFTPHostName,
+                        UserName = SFTPUserName,
+                        Password = SFTPPassword,
+                        SshHostKeyFingerprint = SFTPHostKey
+                    };
+
+                    Console.WriteLine("Synchronizing files...");
+
+                    using (Session session = new Session())
+                    {
+                        session.FileTransferred += FileTransferred;
+                        session.Open(sessionOptions);
+
+                        // Upload files
+                        TransferOptions transferOptions = new TransferOptions();
+                        transferOptions.TransferMode = TransferMode.Binary;
+                        SynchronizationResult syncResult;
+                        syncResult = session.SynchronizeDirectories(SynchronizationMode.Both, SFTPlocalPath, SFTPremotePath, false);
+
+                        foreach (TransferEventArgs transfer in syncResult.Downloads)
+                        {
+                            Console.WriteLine();
+                            Console.WriteLine("{0} folders were synchronized.", transfer.FileName.Count());
+                            // System.Threading.Thread.Sleep(5000);
+                            syncResult.Check();
+                        }
+                    }
+
+                    Console.WriteLine("Sychronizing complete!");
+                    RenameFiles(SFTPlocalPath, SFTPCustName);
+
+                    return "Sychronizing was successful";
+
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Error: {0}", e);
+                    return "Synchronization Unsuccessful";
+                }
+
+            }
+            
             public static string RenameFiles(string dirName, string cusName)
             {
 
@@ -451,37 +446,41 @@ namespace WinSCPTreeDL
                 {
                     foreach (var dir in dirNames)
                     {
-                        var fnames = Directory.GetFiles(dir, "*.mp3").Select(Path.GetFileName);
+                       // var fnames = Directory.GetFiles(dir, "*.mp3").Select(Path.GetFileName);
+                        var fnames = Directory.EnumerateFiles(dir, "*.*", SearchOption.AllDirectories).Where(s => s.EndsWith(".mp3") || s.EndsWith(".wav") || s.EndsWith(".wma") || s.EndsWith(".ra") || s.EndsWith(".m4p"));                 
 
-                        DirectoryInfo d = new DirectoryInfo(dir);
-                        FileInfo[] finfo = d.GetFiles("*.mp3");
+                        DirectoryInfo d = new DirectoryInfo(dir);                        
+                        FileInfo[] finfo = d.GetFiles();
+
 
                         foreach (var f in fnames)
                         {
-                            // Console.WriteLine(d + @"\" + f.ToString());
+                            Console.WriteLine(d + @"\" + f.ToString());
 
                             if (!File.Exists(f.ToString()))
                             {
-                                File.Move(d + @"\" + f.ToString(), d + @"\" + cusName + " - " + f.ToString());
+                                if (!f.ToString().Contains(cusName));                                
+                                    File.Move(d + @"\" + f.ToString(), d + @"\" + cusName + " - " + f.ToString());
+                               
                             }
                             else
                             {
-                                Console.WriteLine("File not found.", dir);
+                                Console.WriteLine("File not found.", dir + @"\" + f.ToString());
 
                                 foreach (FileInfo fi in finfo)
                                 {
-                                    Console.WriteLine("The file modify date is: {0} ", File.GetLastWriteTime(dir));
+                                    Console.WriteLine("Last modify date: {0} ", File.GetLastAccessTime(dir));
                                 }
                             }
                         }
                     }
                 }
-                catch (Exception ex)
+                catch (Exception e)
                 {
-                    return ex.Message;
+                    Console.WriteLine("Error: {0}", e);
+                    return "Renaming of files was unsuccessful";
                 }
-
-                // Console.Read();
+                
                 return "Files were renamed successfully!.";
             }
 
