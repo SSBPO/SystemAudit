@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinA", "WinA\WinA.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mail", "Mail\Mail.csproj", "{0EDF73D0-5CE5-4090-8CDD-C44CB4B8EC8D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NewWinAudit", "NewWinAudit\NewWinAudit.csproj", "{C06F44ED-9AE9-4DE8-9259-2EA74E5B2BE6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{0EDF73D0-5CE5-4090-8CDD-C44CB4B8EC8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0EDF73D0-5CE5-4090-8CDD-C44CB4B8EC8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0EDF73D0-5CE5-4090-8CDD-C44CB4B8EC8D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C06F44ED-9AE9-4DE8-9259-2EA74E5B2BE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C06F44ED-9AE9-4DE8-9259-2EA74E5B2BE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C06F44ED-9AE9-4DE8-9259-2EA74E5B2BE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C06F44ED-9AE9-4DE8-9259-2EA74E5B2BE6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
