@@ -38,7 +38,7 @@ namespace StatesideBpo
             SystemAudit xxx_SysAudit = new SystemAudit();
             List<SysAuditResults> CandidatesList = new List<SysAuditResults>();
 
-            using (ImapClient imapClient = new ImapClient("secure.emailsrvr.com", "systemaudit@statesidebpo.com", "W31is+en2017", AuthMethods.Login, 993, true))
+            using (ImapClient imapClient = new ImapClient("secure.emailsrvr.com", "systemaudit@statesidebpo.com", "Stateside@2017", AuthMethods.Login, 993, true))
             {
                 // Strip HTML from email class
                 killExcel();

@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Net.Mail;
 using System.IO;
 using System.Net.Mime;
+using System.Threading;
 
 namespace NewWinAudit
 {
@@ -32,7 +33,7 @@ namespace NewWinAudit
             string excelLicense = "EQU2-1K6F-UZPP-4MOX";
             SpreadsheetInfo.SetLicense(excelLicense);
 
-            using (S22.Imap.ImapClient imapClient = new S22.Imap.ImapClient("secure.emailsrvr.com", 993, "systemaudit@statesidebpo.com", "W31is+en2017", AuthMethod.Login, true))
+            using (S22.Imap.ImapClient imapClient = new S22.Imap.ImapClient("secure.emailsrvr.com", 993, "systemaudit@statesidebpo.com", "Stateside@2017", AuthMethod.Login, true))
             {
                 // Strip HTML from email class
                 killExcel();
@@ -43,7 +44,7 @@ namespace NewWinAudit
                 IEnumerable<System.Net.Mail.MailMessage> messages = imapClient.GetMessages(uids);
 
                 // Start program
-                int ProcessedEmails = 1;
+                int ProcessedEmails = 0;
                 Console.WriteLine("Checking SystemAudits mailbox.");
 
                 // If there are new unseen messages 
@@ -60,6 +61,7 @@ namespace NewWinAudit
 
                 // End processing and say bye 
                 Console.WriteLine(ProcessedEmails + " email(s) processed. Good bye!");
+                Thread.Sleep(5000);
             }
         }
         
@@ -248,9 +250,10 @@ namespace NewWinAudit
                 {
                     //If there is, then write results, send email to candidate 
                     Console.WriteLine(r.cName + " - " + r.aResult + ". Sending results...");
-                    sendMail(r.cEmail, attachmentFilename, r.cName, r.cEmail);
+                    sendMail("brodriguez@statesidebpo.com", attachmentFilename, r.cName, "brodriguez@statesidebpo.com");
                     Console.WriteLine(r.cName + " results were sent.");
                     Console.WriteLine("");
+
                 }
                 else
                 {
@@ -717,7 +720,6 @@ namespace NewWinAudit
 
         }
         
-
         public static void sendMail(string recipient, string attachmentFilename, string cadidateName, string cemail)
         {
             try
