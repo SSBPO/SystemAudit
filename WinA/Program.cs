@@ -47,8 +47,8 @@ namespace StatesideBpo
 
                 Lazy<AE.Net.Mail.MailMessage>[] msgs = getMailMessages(imapClient);   //Need to improve this
                 string s = "Checking SystemAudits mailbox...";
-               
-                
+                Console.WriteLine(s);
+
                 Console.WriteLine("");
 
                 if (msgs.Count() != 0)
@@ -57,14 +57,12 @@ namespace StatesideBpo
                     if (msgs.Count() == 1)
                     {
                        Console.WriteLine("There is " + msgs.Count() + " SystemAudit to process.");
-                        //string s1= "There is " + msgs.Count() + " SystemAudit to process.";
-                       // Console.SetCursorPosition((Console.WindowWidth - s1.Length) / 2, Console.CursorTop);
+                    
                     }
                     else
                     {
                         Console.WriteLine("There are " + msgs.Count() + " SystemAudits to process.");
-                        //string s1 = "There are " + msgs.Count() + " SystemAudits to process.";
-                       // Console.SetCursorPosition((Console.WindowWidth - s1.Length) / 2, Console.CursorTop);
+                      
                     }
 
                     Console.WriteLine("");
@@ -76,8 +74,9 @@ namespace StatesideBpo
                     {
                         //Declare sysaudit results object
                         SysAuditResults SSBPOsysAuditResults = new SysAuditResults();
+
                         // Flag each email as seen
-                      //  imapClient.AddFlags(Flags.Seen, msg.Value);   
+                        imapClient.AddFlags(Flags.Seen, msg.Value);   
 
                         if ((msg.Value.Body != "") && msg.Value != null)
                         {
@@ -104,12 +103,9 @@ namespace StatesideBpo
                                     }
                                 }
 
-                           
-
                                 if (!SSBPOsysAuditResults.cCPU.Contains("given"))
                                 {
-                                    SysAuditXLWApp.Run("Sheet2.SaveAsC");  //Run SaveAsC macro on the Excel template to export results to pdf
-                                   // 
+                                    SysAuditXLWApp.Run("Sheet2.SaveAsC");  //Run SaveAsC macro on the Excel template to export results to pdf                                 // 
                                 }
 
                                 if (SSBPOsysAuditResults.cCPU.Contains("given"))
@@ -151,10 +147,9 @@ namespace StatesideBpo
             Console.WriteLine("All WinAudits have been processed.");
             Thread.Sleep(5000);
         }//Main
-
         private static void createBitLeverImport(List<SysAuditResults> CandidatesList)
         {
-            string file2Import = string.Format(@"\\filesvr4\IT\WinAudit\4BitLeverImport\TEST\BitLeverImport{0:yyyy-MM-dd_hh-mm-ss-tt}" + " Results.xls", DateTime.Now);
+            string file2Import = string.Format(@"\\filesvr4\IT\WinAudit\4BitLeverImport\BitLeverImport{0:yyyy-MM-dd_hh-mm-ss-tt}" + " Results.xls", DateTime.Now);
             object misValue = System.Reflection.Missing.Value;
             SysAuditXLWApp2 = new Excel.Application();
             SysAuditXLWApp2.DisplayAlerts = false;
@@ -180,11 +175,7 @@ namespace StatesideBpo
 
                 foreach (SysAuditResults r in CandidatesList)
                 {
-                    string attachmentFilename = @"\\Filesvr4\it\WinAudit\4BitLeverImport\TEST\" + r.cName + " WinAudit Results.pdf";
-
-                    if (File.Exists(attachmentFilename))
-                    {
-
+                  
                         SysAuditWWorkSheet2.Cells[index, 1] = r.auditDate;
                         SysAuditWWorkSheet2.Cells[index, 2] = r.cName;
                         SysAuditWWorkSheet2.Cells[index, 3] = r.cEmail;
@@ -196,7 +187,6 @@ namespace StatesideBpo
                             SysAuditWWorkSheet2.Cells[index, 8] = r.aFailedReason;
                         index = index + 1;
 
-                    }
                 }
 
             }
@@ -440,6 +430,7 @@ namespace StatesideBpo
 
             return messages;
         }
+
         struct SysAuditResults
         {
             private string date;
@@ -794,7 +785,7 @@ namespace StatesideBpo
 
                 string attachmentFilename = "";
                 bd = bd + "<table border = " + "1" + " cellpadding = " + "6" + " cellspacing = " + "5" + "><tbody>";
-              //  bd = bd + "<tr><td  width=" + "'45%'" + "></td><td width=" + "'55%'" + "></td></tr>";
+             
 
                 foreach (SysAuditResults c in CandidatesList)
                 {
@@ -810,17 +801,15 @@ namespace StatesideBpo
                   
 
                         bd = bd + "<tr><td  width=" + "'45%'" + ">" + c.cName + "</td><td width=" + "'55%'" + ">" + c.aResult + reason + "</td></tr>";
-                        sendMail(c.cEmail, attachmentFilename, c.cName);
+                      sendMail(c.cEmail, attachmentFilename, c.cName);
 
                     }
                     else
                     {
                         bd = bd + "<tr><td  width=" + "'45%'" + ">" + c.cName + "</td><td width=" + "'55%'" + ">" + c.aResult  + reason + "</td></tr>";
-                        sendMail(c.cEmail, attachmentFilename, c.cName);
+                       sendMail(c.cEmail, attachmentFilename, c.cName);
                     }
-
                     
-
                 }
 
                 bd = bd + "</tbody></table>";
