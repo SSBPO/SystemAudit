@@ -110,9 +110,8 @@ namespace StatesideBpo
 
                                 if (SSBPOsysAuditResults.cCPU.Contains("given"))
                                 {
-                                     SSBPOsysAuditResults.aFailedReason = "**Needs manual processing**";
-                                // 
-                                 }
+                                     SSBPOsysAuditResults.aFailedReason = "**Needs manual processing**";                                
+                                }
                             
                             //if (!SSBPOsysAuditResults.cCPU.Contains)
 
