@@ -33,13 +33,14 @@ namespace StatesideBpo
             Console.WriteLine("");
             Console.WriteLine("################################################################################");
             Console.WriteLine("#######################      SysAuditPro  ver.2    #############################");
-
+            Console.WriteLine("");
 
             // Declare app instance / list to hold all sysaudits 
             SystemAudit xxx_SysAudit = new SystemAudit();
             List<SysAuditResults> CandidatesList = new List<SysAuditResults>();
+            List<string> CandidatesValueList = new List<string>();
 
-            using (ImapClient imapClient = new ImapClient("secure.emailsrvr.com", "systemaudit@statesidebpo.com", "Stateside@2017", AuthMethods.Login, 993, true))
+            using (ImapClient imapClient = new ImapClient("secure.emailsrvr.com", "systemaudit@statesidebpo.com", "g4d5fg4df!!2 ew", AuthMethods.Login, 993, true))
             {
                 killExcel();
                 int ProcessedEmails = 0;
@@ -48,23 +49,18 @@ namespace StatesideBpo
                 Lazy<AE.Net.Mail.MailMessage>[] msgs = getMailMessages(imapClient);   //Need to improve this
                 string s = "Checking SystemAudits mailbox...";
                 Console.WriteLine(s);
-
                 Console.WriteLine("");
 
                 if (msgs.Count() != 0)
                 {
-
                     if (msgs.Count() == 1)
                     {
                        Console.WriteLine("There is " + msgs.Count() + " SystemAudit to process.");
-                    
                     }
                     else
                     {
                         Console.WriteLine("There are " + msgs.Count() + " SystemAudits to process.");
-                      
                     }
-
                     Console.WriteLine("");
                     Console.WriteLine("Starting...");
                     Console.WriteLine("");
@@ -74,6 +70,7 @@ namespace StatesideBpo
                     {
                         //Declare sysaudit results object
                         SysAuditResults SSBPOsysAuditResults = new SysAuditResults();
+                       
 
                         // Flag each email as seen
                         imapClient.AddFlags(Flags.Seen, msg.Value);   
@@ -90,62 +87,52 @@ namespace StatesideBpo
                             SysAuditWWorkBook = SysAuditXLWApp.Workbooks.Open(@"\\filesvr4\IT\WinAudit\SysAudit App\WinAuditPro.xltm"); // Open the SysAudit Excel template
                             SysAuditWWorkSheet = SysAuditWWorkBook.Worksheets[1] as Excel.Worksheet; // Set sheet 1 as the active sheet in Excel template
 
-                                string s1 = "Processing " + ProcessedEmails + " of " + msgs.Count() + ".";
-                                Console.WriteLine(s1);
+                            string s1 = "Processing " + ProcessedEmails + " of " + msgs.Count() + ".";
+                            Console.WriteLine(s1);
 
-                                foreach (string l in line.ToList()) //Foreach of the lines in the email
+                            foreach (string l in line.ToList()) //Foreach of the lines in the email
+                            {
+                                if (l.ToString() != "" & !l.ToString().Contains("Simplified Audit Results") & !l.ToString().Contains("www") & !l.Contains("Avast") & !l.Contains("antivirus")) //If the line is not empty or has unwanted text
                                 {
-                                    if (l.ToString() != "" & !l.ToString().Contains("Simplified Audit Results") & !l.ToString().Contains("www") & !l.Contains("Avast")) //If the line is not empty or has unwanted text
-                                    {
-                                        SSBPOsysAuditResults = getResultsObject(SSBPOsysAuditResults, l); // Set the results object varialble to the value on the specified in the line 
-                                        SysAuditWWorkSheet.Cells[i, 2] = l.ToString().TrimStart(); //Write the line value to the active sheet in Excel template
-                                        i++;
-                                    }
+                                    SSBPOsysAuditResults = getResultsObject(SSBPOsysAuditResults, l); // Set the results object varialble to the value on the specified in the line 
+                                    SysAuditWWorkSheet.Cells[i, 2] = l.ToString().TrimStart(); //Write the line value to the active sheet in Excel template
+                                    CandidatesValueList.Add(l.ToString().TrimStart());
+                                    i++;
                                 }
+                            }
 
-                                if (!SSBPOsysAuditResults.cCPU.Contains("given"))
-                                {
-                                    SysAuditXLWApp.Run("Sheet2.SaveAsC");  //Run SaveAsC macro on the Excel template to export results to pdf                                 // 
-                                }
+                            if (!SSBPOsysAuditResults.cCPU.Contains("given"))
+                            {
+                                SysAuditXLWApp.Run("Sheet2.SaveAsC");  //Run SaveAsC macro on the Excel template to export results to pdf                                 // 
+                            }
 
-                                if (SSBPOsysAuditResults.cCPU.Contains("given"))
-                                {
-                                     SSBPOsysAuditResults.aFailedReason = "**Needs manual processing**";                                
-                                }
-                            
-                            //if (!SSBPOsysAuditResults.cCPU.Contains)
-
+                            if (SSBPOsysAuditResults.cCPU.Contains("given"))
+                            {
+                                    SSBPOsysAuditResults.aFailedReason = "**Needs manual processing**";                                
+                            }
 
                             object misValue = System.Reflection.Missing.Value; //Get misssing.vlaue variable
-                                SysAuditWWorkBook.Close(false, misValue, misValue);
-                                SysAuditWWorkSheet = null;
-                                SysAuditWWorkBook = null;
-                                SysAuditXLWApp.Quit();
-                           
+                            SysAuditWWorkBook.Close(false, misValue, misValue);
+                            SysAuditWWorkSheet = null;
+                            SysAuditWWorkBook = null;
+                            SysAuditXLWApp.Quit();                           
                         }
 
-                       
                         CandidatesList.Add(SSBPOsysAuditResults);
-
                     }
-
                 }
-
                 if (CandidatesList.Count() > 0)
                 {
-
-
                     createBitLeverImport(CandidatesList);
-                    sendCompletionNotification(CandidatesList);
-                  
+                    sendCompletionNotification(CandidatesList);                  
                 }
 
             }/// Using imap
-
             Console.WriteLine("");
             Console.WriteLine("All WinAudits have been processed.");
             Thread.Sleep(5000);
         }//Main
+        
         private static void createBitLeverImport(List<SysAuditResults> CandidatesList)
         {
             string file2Import = string.Format(@"\\filesvr4\IT\WinAudit\4BitLeverImport\BitLeverImport{0:yyyy-MM-dd_hh-mm-ss-tt}" + " Results.xls", DateTime.Now);
@@ -154,7 +141,6 @@ namespace StatesideBpo
             SysAuditXLWApp2.DisplayAlerts = false;
             SysAuditWWorkBook2 = SysAuditXLWApp2.Workbooks.Add(misValue);
             SysAuditWWorkSheet2 = SysAuditWWorkBook2.Worksheets[1] as Excel.Worksheet;
-
 
             using (var stream = File.CreateText(file2Import))
             {
@@ -174,7 +160,6 @@ namespace StatesideBpo
 
                 foreach (SysAuditResults r in CandidatesList)
                 {
-                  
                         SysAuditWWorkSheet2.Cells[index, 1] = r.auditDate;
                         SysAuditWWorkSheet2.Cells[index, 2] = r.cName;
                         SysAuditWWorkSheet2.Cells[index, 3] = r.cEmail;
@@ -370,8 +355,9 @@ namespace StatesideBpo
 
             sysAuditResults = ProcessAudits(sysAuditResults);
 
-            sysAuditResults.aResultSummary = sysAuditResults.cOS + ", " + sysAuditResults.cCPU + ", " + sysAuditResults.cRAM + ", " + sysAuditResults.cHDD + ", " + sysAuditResults.cInternetDown + ", " + sysAuditResults.cInternetUp;
-          
+            sysAuditResults.aResultSummary = sysAuditResults.cOS + ", " + sysAuditResults.cCPU + ", " + sysAuditResults.cRAM + ", " + sysAuditResults.cHDD + ", " + "[Download Speed: " + sysAuditResults.cInternetDown + ", " + "[Upload Speed: " + sysAuditResults.cInternetUp + "]";
+
+
 
             return sysAuditResults;
         }
@@ -795,18 +781,15 @@ namespace StatesideBpo
                         reason = " - " + c.aFailedReason;
                     }
 
-                    if (c.needsManualProcessing) {
+                    if (c.needsManualProcessing) {        
 
-                  
-
-                        bd = bd + "<tr><td  width=" + "'45%'" + ">" + c.cName + "</td><td width=" + "'55%'" + ">" + c.aResult + reason + "</td></tr>";
-                      sendMail(c.cEmail, attachmentFilename, c.cName);
-
+                        bd = bd + "<tr><td  width=" + "'45%'" + ">" + c.cName + "</td><td width=" + "'55%'" + ">" + c.cEmail + "</td><td width=" + "'55%'" + ">" + c.aResult + reason + "</td></tr>";
+                        sendMail(c.cEmail, attachmentFilename, c.cName);
                     }
                     else
                     {
-                        bd = bd + "<tr><td  width=" + "'45%'" + ">" + c.cName + "</td><td width=" + "'55%'" + ">" + c.aResult  + reason + "</td></tr>";
-                       sendMail(c.cEmail, attachmentFilename, c.cName);
+                        bd = bd + "<tr><td  width=" + "'45%'" + ">" + c.cName + "</td><td width=" + "'55%'" + ">" + c.cEmail + "</td><td width=" + "'55%'" + ">"  + reason + "</td></tr>";
+                        sendMail(c.cEmail, attachmentFilename, c.cName);
                     }
                     
                 }
@@ -814,15 +797,12 @@ namespace StatesideBpo
                 bd = bd + "</tbody></table>";
 
                 otMsg.HTMLBody = Regex.Replace(bd, @"[^\u0000-\u007F]", " ");             
-                otMsg.Subject = DateTime.Now + " SystemAudit Processing run completed successfully";
-                
+                otMsg.Subject = DateTime.Now + " SystemAudit Processing run completed successfully";                
                 
                 otMsg.Send();
                 otRecip = null;
                 otMsg = null;
                 otApp = null;
-
-
             }
             catch (System.Exception ex)
             {
