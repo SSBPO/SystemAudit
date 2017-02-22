@@ -34,28 +34,24 @@ namespace Mail
             Console.WriteLine("#####################            WinAuditPro          ##########################");
             Console.WriteLine("################################################################################");
             Console.WriteLine();
-          
-
-            Console.Read();
 
 
-            //string excelLicense = "EQU2-1K6F-UZPP-4MOX";
-            //SpreadsheetInfo.SetLicense(excelLicense);
-            //string fileName = @"\\filesvr4\IT\WinAudit\SysAudit App\WinAuditPro.xlsm";
-            //var ef = ExcelFile.Load(fileName);
-            //ExcelWorksheet worksheet = ef.Worksheets.ActiveWorksheet;
+            using (StreamReader sr = new StreamReader(@"C:\Users\brodriguez\Desktop\OpenFire Lgs\jive.audit-20170103-000.log"))
+            {
+                int count = 0;
 
+                for(int i = 0; count <= 160000; i++)
+                {
+                    count = count + 1;
+                    var fileLine = sr.ReadLine();
+                    Console.WriteLine(fileLine);
+                }
 
+                Console.WriteLine(count);
+                Console.ReadLine();
+            }
 
-                //worksheet.Cells["C5"].Value = "Byron Rodriguez";
-                //worksheet.Cells["C6"].Value = "1/24/3017";
-                //worksheet.Cells["D6"].Value = "Passed";          
-
-
-                ////.Worksheets.ActiveWorksheet = ws2;
-                //ef.Save(@"\\filesvr4\IT\WinAudit\SysAudit App\TestAudit.pdf");
-
-
+            
 
 
         }

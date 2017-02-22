@@ -39,6 +39,7 @@ namespace StatesideBpo
             // Declare app instance / list to hold all sysaudits 
 
             SystemAudit xxx_SysAudit = new SystemAudit();
+            //isTESTING = false;
             isTESTING = true;
             int ProcessedEmails;
             int ProcessedManualEmails;
@@ -55,15 +56,15 @@ namespace StatesideBpo
                 Lazy<AE.Net.Mail.MailMessage>[] msgs = getMailMessages(imapClient);
                 ProcessedEmails = processNormalAudits(CandidatesList, imapClient, msgs);
 
-                string s4 = "Checking SystemAudits mailbox...";
-                Console.SetCursorPosition((Console.WindowWidth - s4.Length) / 2, Console.CursorTop);
-                Console.WriteLine(s4);
-                Console.WriteLine();
 
             }
-            string s = ProcessedEmails + " Audits and " + ProcessedManualEmails + " manual Audits have been processed. ";
+
+          //  Console.WriteLine("################################################################################");            
+            string s = ProcessedEmails + " Audits and " + ProcessedManualEmails + " manual Audits were processed. Good Bye!";
             Console.SetCursorPosition((Console.WindowWidth - s.Length) / 2, Console.CursorTop);
-            Console.WriteLine(s);            
+            Console.WriteLine(s);
+            Console.WriteLine();
+            Console.WriteLine("################################################################################");            
             Console.WriteLine();
             Thread.Sleep(5000);
         }
@@ -77,7 +78,7 @@ namespace StatesideBpo
             {
                 if (Manualmsgs.Count() == 1)
                 {
-                
+
                     string s9 = "There is " + Manualmsgs.Count() + " Manual SystemAudit to process.";
                     Console.SetCursorPosition((Console.WindowWidth - s9.Length) / 2, Console.CursorTop);
                     Console.WriteLine(s9);
@@ -92,9 +93,9 @@ namespace StatesideBpo
                     Console.WriteLine();
                 }
 
-                string s = "Starting...";
-                Console.SetCursorPosition((Console.WindowWidth - s.Length) / 2, Console.CursorTop);
-                Console.WriteLine(s);
+                string sx = "Starting...";
+                Console.SetCursorPosition((Console.WindowWidth - sx.Length) / 2, Console.CursorTop);
+                Console.WriteLine(sx);
                 Console.WriteLine();
 
                 HtmlToText stripHtml = new HtmlToText();
@@ -104,13 +105,14 @@ namespace StatesideBpo
                 {
                     //Declare sysaudit results object
                     SysAuditResults SSBPOsysAuditResults = new SysAuditResults();
-                    
+
                     // Flag each email as seen
-                   // imapClient.AddFlags(Flags.Seen, msg.Value);
+                    imapClient.AddFlags(Flags.Seen, msg.Value);
+
+                    ProcesseManualdEmails = ProcesseManualdEmails + 1;
 
                     if ((msg.Value.Body != "") && msg.Value != null)
-                    {
-                        ProcesseManualdEmails = ProcesseManualdEmails + 1;
+                    {                        
 
                         string[] lines = stripHtml.Convert(msg.Value.Body).Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
                         List<String> line = lines.ToList();
@@ -118,12 +120,20 @@ namespace StatesideBpo
                         SysAuditXLWApp = new Excel.Application();
                         SysAuditWWorkBook = SysAuditXLWApp.Workbooks.Open(@"\\filesvr4\IT\WinAudit\SysAudit App\WinAuditPro.xltm"); // Open the SysAudit Excel template
                         SysAuditWWorkSheet = SysAuditWWorkBook.Worksheets[1] as Excel.Worksheet; // Set sheet 1 as the active sheet in Excel template
-                       // SysAuditXLWApp.Visible = true;
+                                                                                                 // SysAuditXLWApp.Visible = true;
+                        string s3 = "Starting...";
+                        Console.SetCursorPosition((Console.WindowWidth - s3.Length) / 2, Console.CursorTop);
+                        Console.WriteLine(s3);
 
-                        string s1 = "Processing " + ProcesseManualdEmails + " of " + Manualmsgs.Count() + ".";
+                        Console.WriteLine("");
+
+                       
+                        string s1 = "Processing {0} of {1}.";
                         Console.SetCursorPosition((Console.WindowWidth - s1.Length) / 2, Console.CursorTop);
-                        Console.WriteLine(s1);
-                        Console.WriteLine();
+                        Console.SetCursorPosition(0, 0);
+                        Console.WriteLine("");
+                        Console.Write(s1, ProcesseManualdEmails, Manualmsgs.Count());
+                        Console.WriteLine("");
 
                         SysAuditWWorkSheet.Cells[5, 2] = "Computer Name: ";
                         SysAuditWWorkSheet.Cells[6, 2] = "Current User: ";
@@ -160,7 +170,6 @@ namespace StatesideBpo
 
                                 foreach (string t in values)
                                 {
-
                                     string v = t.Replace("Notes", "");
 
                                     if (v.Contains("Windows"))
@@ -169,32 +178,32 @@ namespace StatesideBpo
                                         SysAuditWWorkSheet.Cells[7, 2] = "Operating System: " + v.ToString().TrimStart();
                                         SSBPOsysAuditResults = getResultsObject(SSBPOsysAuditResults, ln);
                                     }
+
                                     if (v.Contains("CPU"))
                                     {
                                         string ln = "CPU (Processor) Results: " + v.ToString().TrimStart();
                                         SysAuditWWorkSheet.Cells[8, 2] = "CPU (Processor) Results: " + v.ToString().TrimStart();
                                         SSBPOsysAuditResults = getResultsObject(SSBPOsysAuditResults, ln);
                                     }
+
                                     if (v.Contains("RAM"))
                                     {
                                         string ln = "RAM (Memory) Results: " + v.ToString().TrimStart();
                                         SysAuditWWorkSheet.Cells[9, 2] = "RAM (Memory) Results: " + v.ToString().TrimStart();
                                         SSBPOsysAuditResults = getResultsObject(SSBPOsysAuditResults, ln);
                                     }
+
                                     if (v.Contains("Disk"))
                                     {
                                         string ln = "Disk (Hard Drive) Results:  " + v.ToString().TrimStart();
                                         SysAuditWWorkSheet.Cells[10, 2] = "Disk (Hard Drive) Results:  " + v.ToString().TrimStart();
                                         SSBPOsysAuditResults = getResultsObject(SSBPOsysAuditResults, ln);
                                     }
-                                   
 
                                     if (v.Contains("Download"))
                                     {
-                                        manualDownSpeed = v.ToString().TrimStart() + "] - ";                                      
+                                        manualDownSpeed = v.ToString().TrimStart() + "] - ";
                                     }
-
-                                   
 
                                     if (v.Contains("Upload"))
                                     {
@@ -203,14 +212,8 @@ namespace StatesideBpo
                                         SysAuditWWorkSheet.Cells[11, 2] = "Network Results: " + ln;
                                         SSBPOsysAuditResults = getResultsObject(SSBPOsysAuditResults, ln);
                                     }
-
-                                 
-                                   
-    }
+                                }
                             }
-
-                            // Set the results object varialble to the value on the specified in the line 
-
                         }
 
 
@@ -244,7 +247,7 @@ namespace StatesideBpo
                         {
                             SSBPOsysAuditResults.aFailedReason = SSBPOsysAuditResults.aFailedReason.Substring(2);
                         }
-                        
+
 
                         object misValue = System.Reflection.Missing.Value; //Get misssing.vlaue variable
                         SysAuditWWorkBook.Close(false, misValue, misValue);
@@ -252,23 +255,23 @@ namespace StatesideBpo
                         SysAuditWWorkBook = null;
                         SysAuditXLWApp.Quit();
                     }
-                   
+
                     CandidatesList.Add(SSBPOsysAuditResults);
 
                 }
 
-                sendCompletionNotification(CandidatesList);
+              //  sendCompletionNotification(CandidatesList);
 
             }
 
             return ProcesseManualdEmails;
-   
+
         }
 
         private static int processNormalAudits(List<SysAuditResults> CandidatesList, ImapClient imapClient, Lazy<AE.Net.Mail.MailMessage>[] msgs)
         {
-           
-            killExcel();           
+
+            killExcel();
 
             msgs = getMailMessages(imapClient);
             int ProcessedEmails = 0;
@@ -284,20 +287,20 @@ namespace StatesideBpo
                 }
                 else
                 {
-                   
+
                     string s2 = "There are " + msgs.Count() + " SystemAudits to process.";
                     Console.SetCursorPosition((Console.WindowWidth - s2.Length) / 2, Console.CursorTop);
                     Console.WriteLine(s2);
                     Console.WriteLine();
 
                 }
-                
+
                 string s3 = "Starting...";
                 Console.SetCursorPosition((Console.WindowWidth - s3.Length) / 2, Console.CursorTop);
                 Console.WriteLine(s3);
-              
 
-                
+
+
                 HtmlToText stripHtml = new HtmlToText();
                 //Foreach unseen email found in the mailbox
                 foreach (Lazy<AE.Net.Mail.MailMessage> msg in msgs)
@@ -307,19 +310,16 @@ namespace StatesideBpo
                     SysAuditResults SSBPOsysAuditResults = new SysAuditResults();
 
                     // Flag each email as seen
-                    //imapClient.AddFlags(Flags.Seen, msg.Value);
+                    imapClient.AddFlags(Flags.Seen, msg.Value);
 
                     string s5 = "Processing {0} of {1}.";
                     Console.SetCursorPosition((Console.WindowWidth - s5.Length) / 2, Console.CursorTop);
                     Console.Write(s5, ProcessedEmails, msgs.Count());
-                 
-
-
 
 
                     if ((msg.Value.Body != "") && msg.Value != null)
                     {
-                        
+
 
                         string[] lines = stripHtml.Convert(msg.Value.Body).Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
                         int i = 2;
@@ -329,7 +329,7 @@ namespace StatesideBpo
                         SysAuditWWorkBook = SysAuditXLWApp.Workbooks.Open(@"\\filesvr4\IT\WinAudit\SysAudit App\WinAuditPro.xltm"); // Open the SysAudit Excel template
                         SysAuditWWorkSheet = SysAuditWWorkBook.Worksheets[1] as Excel.Worksheet; // Set sheet 1 as the active sheet in Excel template
 
-                      
+
 
                         foreach (string l in line.ToList()) //Foreach of the lines in the email
                         {
@@ -337,7 +337,6 @@ namespace StatesideBpo
                             {
                                 SSBPOsysAuditResults = getResultsObject(SSBPOsysAuditResults, l); // Set the results object varialble to the value on the specified in the line 
                                 SysAuditWWorkSheet.Cells[i, 2] = l.ToString().TrimStart(); //Write the line value to the active sheet in Excel template
-
                                 i++;
                             }
                         }
@@ -355,7 +354,7 @@ namespace StatesideBpo
                             SSBPOsysAuditResults.aResult = "Fail";
                         }
 
-                        
+
                         if (!SSBPOsysAuditResults.cCPU.Contains("given"))
                         {
                             SysAuditXLWApp.Run("Sheet2.SaveAsC");  //Run SaveAsC macro on the Excel template to export results to pdf                                 // 
@@ -365,8 +364,6 @@ namespace StatesideBpo
                         {
                             SSBPOsysAuditResults.aFailedReason = "**Needs manual processing**";
                         }
-
-
 
                         if (!string.IsNullOrEmpty(SSBPOsysAuditResults.aFailedReason))
                         {
@@ -379,7 +376,7 @@ namespace StatesideBpo
                         SysAuditWWorkBook = null;
                         SysAuditXLWApp.Quit();
                     }
-                   
+
                     CandidatesList.Add(SSBPOsysAuditResults);
                 }
 
@@ -400,11 +397,12 @@ namespace StatesideBpo
             if (isTESTING)
             {
                 file2Import = string.Format(@"\\filesvr4\IT\WinAudit\4BitLeverImport\TEST\BitLeverImport{0:yyyy-MM-dd_hh-mm-ss-tt}" + " Results.xls", DateTime.Now);
-            }else
+            }
+            else
             {
                 file2Import = string.Format(@"\\filesvr4\IT\WinAudit\4BitLeverImport\BitLeverImport{0:yyyy-MM-dd_hh-mm-ss-tt}" + " Results.xls", DateTime.Now);
             }
-           
+
             object misValue = System.Reflection.Missing.Value;
             SysAuditXLWApp2 = new Excel.Application();
             SysAuditXLWApp2.DisplayAlerts = false;
@@ -430,16 +428,21 @@ namespace StatesideBpo
 
                 foreach (SysAuditResults r in CandidatesList)
                 {
-                        SysAuditWWorkSheet2.Cells[index, 1] = r.auditDate;
-                        SysAuditWWorkSheet2.Cells[index, 2] = r.cName;
-                        SysAuditWWorkSheet2.Cells[index, 3] = r.cEmail;
-                        SysAuditWWorkSheet2.Cells[index, 4] = r.aResultSummary;
-                        SysAuditWWorkSheet2.Cells[index, 5] = r.aResult;//.Replace("ed", "").Replace(".","").Replace('-', ' ');
-                        SysAuditWWorkSheet2.Cells[index, 6] = Environment.UserName;
-                        SysAuditWWorkSheet2.Cells[index, 7] = "Yes";                        
-                        SysAuditWWorkSheet2.Cells[index, 8] = r.aFailedReason;
-                        SysAuditWWorkSheet2.Cells[index, 9] = DateTime.Now;
-                        index = index + 1;
+                    SysAuditWWorkSheet2.Cells[index, 1] = r.auditDate;
+                    SysAuditWWorkSheet2.Cells[index, 2] = r.cName;
+                    SysAuditWWorkSheet2.Cells[index, 3] = r.cEmail;
+                    SysAuditWWorkSheet2.Cells[index, 4] = r.aResultSummary;
+                    SysAuditWWorkSheet2.Cells[index, 5] = r.aResult;
+                    SysAuditWWorkSheet2.Cells[index, 6] = Environment.UserName;
+                    if (r.aResult == "Pending")
+                        SysAuditWWorkSheet2.Cells[index, 7] = "No";
+                    else
+                    {
+                        SysAuditWWorkSheet2.Cells[index, 7] = "Yes";
+                    }
+                    SysAuditWWorkSheet2.Cells[index, 8] = r.aFailedReason;
+                    SysAuditWWorkSheet2.Cells[index, 9] = DateTime.Now;
+                    index = index + 1;
 
                 }
 
@@ -453,11 +456,12 @@ namespace StatesideBpo
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-        }        
+        }
+
         private static SysAuditResults getResultsObject(SysAuditResults sysAuditResults, string l)
         {
 
-           
+
             if (l.Contains("Time"))
             {
                 sysAuditResults.auditDate = l.ToString().Substring(17);
@@ -482,7 +486,7 @@ namespace StatesideBpo
 
                 if (Convert.ToInt32(cHDD1) < 25)
                 {
-                    sysAuditResults.HDDaResult = "Fail";                    
+                    sysAuditResults.HDDaResult = "Fail";
                     sysAuditResults.aFailedReason = ", Hard drive insufficient";
                 }
                 else
@@ -496,7 +500,7 @@ namespace StatesideBpo
                 sysAuditResults.cOS = l.ToString().Substring(18);
                 string cOSs = sysAuditResults.cOS.Substring(0, 10);
                 string[] cOS1s = cOSs.Split(' ');
-                string cOS2 = cOS1s[1];             
+                string cOS2 = cOS1s[1];
 
                 if (cOS2.Trim().Length > 1)
                 {
@@ -507,7 +511,7 @@ namespace StatesideBpo
 
                 if (Convert.ToInt64(cOS2.Trim()) < 7)
                 {
-                    sysAuditResults.OSaResult = "Fail";                    
+                    sysAuditResults.OSaResult = "Fail";
                     sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", OS insufficient";
                 }
                 else
@@ -532,64 +536,64 @@ namespace StatesideBpo
 
                 if (Convert.ToInt32(cRAM1) < 2)
                 {
-                    sysAuditResults.RAMaResult = "Fail";                  
+                    sysAuditResults.RAMaResult = "Fail";
                     sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", RAM insufficient ";
                 }
                 else
                 {
                     sysAuditResults.RAMaResult = "Pass";
-                  
+
                 }
             }
 
             if (l.Contains("Network"))
             {
 
-                    sysAuditResults.cInternetUp = l.ToString().Substring(62).Replace("]", "").Trim();
+                sysAuditResults.cInternetUp = l.ToString().Substring(62).Replace("]", "").Trim();
 
-                    if (l.ToString().Substring(62).Replace("]", "").Trim().Contains("Kbps"))
+                if (l.ToString().Substring(62).Replace("]", "").Trim().Contains("Kbps"))
+                {
+                    if (Convert.ToUInt32(sysAuditResults.cInternetUp) < 1000)
                     {
-                        if (Convert.ToUInt32(sysAuditResults.cInternetUp) < 1000)
-                        {
-                            sysAuditResults.InternetUpResult = "Fail";                  
-                            sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Upload speed insufficient";
-                        }
-                        else
-                        {
-
-                            sysAuditResults.InternetUpResult = "Pass";                   
-                        }
+                        sysAuditResults.InternetUpResult = "Fail";
+                        sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Upload speed insufficient";
                     }
                     else
                     {
-                    
-                        if (Convert.ToUInt32(sysAuditResults.cInternetUp) < 1)//could be problems
-                        {
-                            sysAuditResults.InternetUpResult = "Fail";
-                        
-                            sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Upload speed insufficient";
-                        }
-                        else
-                        {
-                            sysAuditResults.InternetUpResult = "Pass";
-                        
-                        }
 
+                        sysAuditResults.InternetUpResult = "Pass";
                     }
+                }
+                else
+                {
 
-                    sysAuditResults.cInternetDown = l.ToString().Substring(34, 10).Replace("]", "");
-
-
-                    if (Convert.ToUInt32(sysAuditResults.cInternetDown) < 3)
+                    if (Convert.ToUInt32(sysAuditResults.cInternetUp) < 1)//could be problems
                     {
-                        sysAuditResults.InternetDownResult = "Fail";                        
-                        sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Download speed insufficient";
+                        sysAuditResults.InternetUpResult = "Fail";
+
+                        sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Upload speed insufficient";
                     }
                     else
                     {
-                        sysAuditResults.InternetDownResult = "Pass";
+                        sysAuditResults.InternetUpResult = "Pass";
+
                     }
-               
+
+                }
+
+                sysAuditResults.cInternetDown = l.ToString().Substring(34, 10).Replace("]", "");
+
+
+                if (Convert.ToUInt32(sysAuditResults.cInternetDown) < 3)
+                {
+                    sysAuditResults.InternetDownResult = "Fail";
+                    sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Download speed insufficient";
+                }
+                else
+                {
+                    sysAuditResults.InternetDownResult = "Pass";
+                }
+
 
 
             }
@@ -611,7 +615,7 @@ namespace StatesideBpo
                     {
                         sysAuditResults.CPUaResult = "Fail";
                         sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", CPU insufficient";
-                 
+
                     }
                 }
                 else
@@ -628,10 +632,10 @@ namespace StatesideBpo
             //    sysAuditResults.aFailedReason = sysAuditResults.aFailedReason.Remove(0, 1);
             //}
 
-            sysAuditResults.aResultSummary = sysAuditResults.cOS + ", " + sysAuditResults.cCPU + ", " + sysAuditResults.cRAM + ", " + sysAuditResults.cHDD + ", " + "[Download Speed: " + sysAuditResults.cInternetDown + ", " + "[Upload Speed: " + sysAuditResults.cInternetUp + "]";
+            sysAuditResults.aResultSummary = "[OS = " + sysAuditResults.cOS + "] - [C" + sysAuditResults.cCPU + " - " + sysAuditResults.cRAM + " - " + sysAuditResults.cHDD + " - [Download Speed = " + sysAuditResults.cInternetDown + " Mbps] - [Upload Speed = " + sysAuditResults.cInternetUp + " Mbps]";
             return sysAuditResults;
         }
-   
+
         private static Lazy<AE.Net.Mail.MailMessage>[] getMailMessages(ImapClient imapClient)
         {
             imapClient.SelectMailbox("INBOX");
@@ -641,6 +645,7 @@ namespace StatesideBpo
 
             return messages;
         }
+
         private static Lazy<AE.Net.Mail.MailMessage>[] getManualMailMessages(ImapClient imapClient)
         {
             imapClient.SelectMailbox("INBOX");
@@ -650,6 +655,7 @@ namespace StatesideBpo
 
             return messages;
         }
+
         struct SysAuditResults
         {
 
@@ -674,10 +680,10 @@ namespace StatesideBpo
             private string _ramresults;
             private string _hddresults;
             private string _internetupresults;
-            private string _internetdownresults;       
+            private string _internetdownresults;
 
 
-            
+
             public bool needsManualProcessing
             {
                 get
@@ -811,23 +817,28 @@ namespace StatesideBpo
                     string[] tf = value.Split(' ');
                     int idx = 0;
 
-                    if(tf[0]=="" | tf[0] == ":")
-                       idx = 1;
+                    if (tf[0] == "" | tf[0] == ":")
+                        idx = 1;
 
-                    _internetUp = tf[idx].ToString().Substring(0, 2).Replace(".","").Replace(";", "");
+                    _internetUp = tf[idx].ToString().Substring(0, 2).Replace(".", "").Replace(";", "");
                 }
             }
             public string cInternetDown
             {
                 get
-                { 
+                {
                     return _internetDown;
                 }
                 set
                 {
                     string[] tf = value.Split(' ');
-                    _internetDown = tf[0].ToString().Substring(0,2).Replace(".", "");
-                   
+                    int idx = 0;
+
+                    if (tf[0] == "" | tf[0] == ":")
+                        idx = 1;
+
+                    _internetDown = tf[idx].ToString().Substring(0, 2).Replace(".", "");
+
                 }
             }
             public string aResult
@@ -855,7 +866,7 @@ namespace StatesideBpo
                 }
             }
 
-            
+
             public string CPUaResult
             {
                 get
@@ -927,7 +938,7 @@ namespace StatesideBpo
 
                     _internetdownresults = value;
                 }
-            }  
+            }
 
         }
 
@@ -948,56 +959,57 @@ namespace StatesideBpo
 
         public static void sendMail(string recipient, string attachmentFilename, string cadidateName, bool isTESTING)
         {
-            if (File.Exists(attachmentFilename)) {
-               
-                    try
+            if (File.Exists(attachmentFilename))
+            {
+
+                try
+                {
+                    Outlook.Application otApp = new Outlook.Application();// create outlook object
+                    Outlook.NameSpace ns = otApp.Session;
+
+                    Outlook.Folder folder = otApp.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderDrafts) as Outlook.Folder;
+                    Outlook.MailItem otMsg = otApp.CreateItemFromTemplate(@"\\filesvr4\IT\WinAudit\SysAudit App\System audit results.oft", folder) as Outlook.MailItem;///);Outlook.MailItem)otApp.CreateItem(Outlook.OlItemType.olMailItem); // Create mail object
+
+                    otMsg.SendUsingAccount = getAccountForEmailAddress(otApp, "systemaudit@statesidebpo.com");
+                    Outlook.Inspector oInspector = otMsg.GetInspector;
+
+                    String sSource = "";
+                    String sDisplayName = "";
+
+                    if (isTESTING)
                     {
-                        Outlook.Application otApp = new Outlook.Application();// create outlook object
-                        Outlook.NameSpace ns = otApp.Session;
-
-                        Outlook.Folder folder = otApp.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderDrafts) as Outlook.Folder;
-                        Outlook.MailItem otMsg = otApp.CreateItemFromTemplate(@"\\filesvr4\IT\WinAudit\SysAudit App\System audit results.oft", folder) as Outlook.MailItem;///);Outlook.MailItem)otApp.CreateItem(Outlook.OlItemType.olMailItem); // Create mail object
-
-                        otMsg.SendUsingAccount = getAccountForEmailAddress(otApp, "systemaudit@statesidebpo.com");
-                        Outlook.Inspector oInspector = otMsg.GetInspector;
-
-                        String sSource = "";
-                        String sDisplayName = "";
-
-                        if (isTESTING)
-                        {
-                            Outlook.Recipient otRecip = (Outlook.Recipient)otMsg.Recipients.Add("brodriguez@statesidebpo.com"); //jreiner@statesidebpo.com  brodriguez@statesidebpo.com
-                            otMsg.Subject = "TESTING - SSBPO System audit results";
-                            sDisplayName = "TESTING - " + cadidateName + " SystemAudit Results.pdf";
-                            sSource = attachmentFilename;
-                        }
-                        else
-                        {
-                            Outlook.Recipient otRecip = (Outlook.Recipient)otMsg.Recipients.Add(recipient); 
-                            otMsg.Subject = "SSBPO System audit results";
-                            sDisplayName = cadidateName + " SystemAudit Results.pdf";
-                            sSource = attachmentFilename;
-                        }
-
-                        otMsg.Recipients.ResolveAll();// validate recipient address                    
-
-                        int iPos = (int)otMsg.Body.Length + 1;
-                        int iAttType = (int)Outlook.OlAttachmentType.olByValue;
-                        Outlook.Attachment oAttach = otMsg.Attachments.Add(sSource, iAttType, iPos, sDisplayName); // add attachment
-                        otMsg.Save();
-                        otMsg.Send(); 
-                        otMsg = null;
-                        otApp = null;
-
+                        Outlook.Recipient otRecip = (Outlook.Recipient)otMsg.Recipients.Add("brodriguez@statesidebpo.com"); //jreiner@statesidebpo.com  brodriguez@statesidebpo.com
+                        otMsg.Subject = "TESTING - SSBPO System audit results";
+                        sDisplayName = "TESTING - " + cadidateName + " SystemAudit Results.pdf";
+                        sSource = attachmentFilename;
                     }
-                    catch (System.Exception ex)
+                    else
                     {
-                        throw new ApplicationException
-                          ("Outlook exception has occured: " + ex.Message);
-                    }       
+                        Outlook.Recipient otRecip = (Outlook.Recipient)otMsg.Recipients.Add(recipient);
+                        otMsg.Subject = "SSBPO System audit results";
+                        sDisplayName = cadidateName + " SystemAudit Results.pdf";
+                        sSource = attachmentFilename;
+                    }
+
+                    otMsg.Recipients.ResolveAll();// validate recipient address                    
+
+                    int iPos = (int)otMsg.Body.Length + 1;
+                    int iAttType = (int)Outlook.OlAttachmentType.olByValue;
+                    Outlook.Attachment oAttach = otMsg.Attachments.Add(sSource, iAttType, iPos, sDisplayName); // add attachment
+                    otMsg.Save();
+                    otMsg.Send();
+                    otMsg = null;
+                    otApp = null;
+
+                }
+                catch (System.Exception ex)
+                {
+                    throw new ApplicationException
+                      ("Outlook exception has occured: " + ex.Message);
+                }
             }
-        }   
-            
+        }
+
         private static void sendCompletionNotification(List<SysAuditResults> CandidatesList)
         {
             try
@@ -1020,8 +1032,8 @@ namespace StatesideBpo
                     recipBcc.Type = (int)Outlook.OlMailRecipientType.olBCC;
                     otRecip.Resolve();// validate recipient address
                     otMsg.Subject = DateTime.Now + " SystemAudit Processing run completed successfully";
-                }    
-                
+                }
+
                 string bd = "";
                 if (CandidatesList.Count() == 1)
                 {
@@ -1034,11 +1046,11 @@ namespace StatesideBpo
 
                 string attachmentFilename = "";
                 bd = bd + "<table border = " + "1" + " cellpadding = " + "6" + " cellspacing = " + "5" + "><tbody>";
-             
+
 
                 foreach (SysAuditResults c in CandidatesList)
                 {
-                    
+
                     attachmentFilename = @"\\filesvr4\IT\WinAudit\Results_Archive\" + c.cName + " SystemAudit Results.pdf";
                     string reason = c.aFailedReason;
 
@@ -1047,26 +1059,27 @@ namespace StatesideBpo
                         reason = " - " + c.aFailedReason;
                     }
 
-                    if (c.needsManualProcessing) {        
+                    if (c.needsManualProcessing)
+                    {
 
                         bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'33%'" + ">" + c.cEmail + "</td><td width=" + "'43%'" + ">" + c.aResult + reason + "</td></tr>";
                         sendMail(c.cEmail, attachmentFilename, c.cName, isTESTING);
                     }
                     else
                     {
-                        bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'33%'" + ">" + c.cEmail + "</td><td width=" + "'43%'" + ">"  + c.aResult + reason + "</td></tr>";
+                        bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'33%'" + ">" + c.cEmail + "</td><td width=" + "'43%'" + ">" + c.aResult + reason + "</td></tr>";
                         sendMail(c.cEmail, attachmentFilename, c.cName, isTESTING);
                     }
-                    
+
                 }
 
                 bd = bd + "</tbody></table>";
 
-                otMsg.HTMLBody = Regex.Replace(bd, @"[^\u0000-\u007F]", " ");             
-                              
-                
+                otMsg.HTMLBody = Regex.Replace(bd, @"[^\u0000-\u007F]", " ");
+
+
                 otMsg.Send();
-               
+
                 otMsg = null;
                 otApp = null;
             }
