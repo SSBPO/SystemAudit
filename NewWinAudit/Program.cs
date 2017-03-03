@@ -22,8 +22,6 @@ namespace NewWinAudit
         public int ProcessedEmails = 0;
         public int ProcessedManualEmails = 0;
 
-
-
         static void Main(string[] args)
         {
             string excelLicense = "EQU2-1K6F-UZPP-4MOX";
@@ -61,8 +59,10 @@ namespace NewWinAudit
                 xxx_SysAudit.ProcessedManualEmails = proccessManualAudits(CandidatesList, manualmessages);
             }
 
-            Console.WriteLine();          
-            string s5 = "There are not more emails to processed. Good bye!";
+            Console.WriteLine("");
+           
+            string s5 = "Processing is completed. There are not more emails to processed. Good bye!";
+            Console.WriteLine("");
             Console.SetCursorPosition((Console.WindowWidth - s5.Length) / 2, Console.CursorTop);
             Console.WriteLine(s5);
             Thread.Sleep(5000);
@@ -167,7 +167,7 @@ namespace NewWinAudit
                     string s9 = "There is " + Manualmsgs.Count() + " Manual SystemAudit to process.";
                     Console.SetCursorPosition((Console.WindowWidth - s9.Length) / 2, Console.CursorTop);
                     Console.WriteLine(s9);
-                    Console.WriteLine();
+          
                 }
                 else
                 {
@@ -175,13 +175,14 @@ namespace NewWinAudit
                     string s8 = "There are " + Manualmsgs.Count() + " Manual SystemAudits to process.";
                     Console.SetCursorPosition((Console.WindowWidth - s8.Length) / 2, Console.CursorTop);
                     Console.WriteLine(s8);
-                    Console.WriteLine();
+                   
                 }
 
-                string sx = "Starting...";
-                Console.SetCursorPosition((Console.WindowWidth - sx.Length) / 2, Console.CursorTop);
-                Console.WriteLine(sx);
-                Console.WriteLine();
+                //Console.WriteLine("");
+                //string sx = "Starting...";                
+                //Console.SetCursorPosition((Console.WindowWidth - sx.Length) / 2, Console.CursorTop);
+                //Console.WriteLine(sx);
+               
 
 
                 HtmlToText stripHtml = new HtmlToText();
@@ -189,6 +190,17 @@ namespace NewWinAudit
                 //Foreach unseen email found in the mailbox
                 foreach (System.Net.Mail.MailMessage msg in Manualmsgs)
                 {
+                    Console.WriteLine("");
+                    ProcesseManualdEmails = ProcesseManualdEmails + 1;
+
+                    string s1 = "Processing {0} of {1}.";                    
+                    Console.SetCursorPosition((Console.WindowWidth - s1.Length) / 2, Console.CursorTop);   
+                    Console.Write(s1, ProcesseManualdEmails, Manualmsgs.Count());
+
+                   
+
+
+
                     if (msg.Body != "")
                     {
                         SysAuditResults SSBPOsysAuditResults = new SysAuditResults();
@@ -199,94 +211,144 @@ namespace NewWinAudit
                         string fileName = @"\\filesvr4\IT\WinAudit\SysAudit App\WinAuditPro.xlsm";
                         var ef = ExcelFile.Load(fileName);
                         ExcelWorksheet worksheet = ef.Worksheets.ActiveWorksheet;
-
-                        string s1 = "Processing {0} of {1}.";
-                        Console.SetCursorPosition((Console.WindowWidth - s1.Length) / 2, Console.CursorTop);
-                        Console.SetCursorPosition(0, 0);
-                        Console.WriteLine("");
-                        Console.Write(s1, ProcesseManualdEmails, Manualmsgs.Count());
-                        Console.WriteLine("");
-
-                        worksheet.Cells["B5"].Value = "Computer Name: ";
-                        worksheet.Cells["B6"].Value = "Current User:";
-                        string manualUpSpeed = "";
-                        string manualDownSpeed = "";
+                        
+                       
 
                         foreach (string l in line.ToList()) //Foreach of the lines in the email
                         {
-                            if (l.ToString().Contains("Date Processed"))
+                            if (l.ToString().Contains("Audit Run Date"))
                             {
-                               
-                                string ln = "Audit Date Time: " + l.ToString().TrimStart().Replace("Date Processed", "");
-                                worksheet.Cells["B2"].Value = ln;
-                                SSBPOsysAuditResults = getmManualResultsObject(SSBPOsysAuditResults, ln);
+                                string ln = "Audit Date Time: " + l.ToString().TrimStart().Replace("Audit Run Date", "");
+                                //worksheet.Cells["B2"].Value = ln;
+                                SSBPOsysAuditResults = getResultsObject(SSBPOsysAuditResults, ln);
                             }
 
                             if (l.ToString().Contains("Candidate Name"))
                             {
                                 string ln = "Full Name: " + l.ToString().TrimStart().Replace("Candidate Name", "");
-                                worksheet.Cells["B3"].Value = ln;                                
-                                SSBPOsysAuditResults = getmManualResultsObject(SSBPOsysAuditResults, ln);
+                               // worksheet.Cells["B3"].Value = ln;
+                                SSBPOsysAuditResults = getResultsObject(SSBPOsysAuditResults, ln);
                             }
 
                             if (l.ToString().Contains("Candidate Email"))
                             {
                                 string ln = "Email Address: " + l.ToString().TrimStart().Replace("Candidate Email", "");
-                                worksheet.Cells["B4"].Value = ln;
-                                SSBPOsysAuditResults = getmManualResultsObject(SSBPOsysAuditResults, ln);
+                               // worksheet.Cells["B4"].Value = ln;
+                                SSBPOsysAuditResults = getResultsObject(SSBPOsysAuditResults, ln);
                             }
+
 
                             if (l.ToString().Contains("Notes"))
                             {
-                                string[] values = l.Split('-');
-                                
+                                string[] values = l.Split('-');                              
+                                //Write the line value to the active sheet in Excel template
+                                string trn = "";
+                                string rsn = "";
+                                string sRamc = "";
+
+                                string hdds = "";
+                                string hddsp = "";
+                                string hddas = "";
+                                string shdd = "";
+
+                                string cpus = "";
+                                string cpun = "";
+                                string sCpuc = "";
+
+                                string manualUpSpeed = "";
+                                string manualDownSpeed = "";
+                                string internetSpeed = "";
+
                                 foreach (string t in values)
                                 {
                                     string v = t.Replace("Notes", "");
 
-                                    if (v.Contains("Windows"))
-                                    {
-                                        string ln = "Operating System: " + v.ToString().TrimStart();
-                                        worksheet.Cells["B7"].Value = ln;
-                                        SSBPOsysAuditResults = getmManualResultsObject(SSBPOsysAuditResults, ln);
-                                    }
+                                        if (v.Contains("Windows"))
+                                        {
+                                            string ln = "Operating System: " + v.ToString().TrimStart().Replace("[OS = ", "").Replace("]", "");
+                                           // worksheet.Cells["B7"].Value = ln;
+                                            SSBPOsysAuditResults = getResultsObject(SSBPOsysAuditResults, ln);
+                                        }
 
-                                    if (v.Contains("CPU"))
-                                    {
-                                        string ln = "CPU (Processor) Results: " + v.ToString().TrimStart();
-                                        worksheet.Cells["B8"].Value = ln;
-                                        SSBPOsysAuditResults = getmManualResultsObject(SSBPOsysAuditResults, ln);
-                                    }
+                                        if (v.Contains("CPU Score"))
+                                        {
+                                            cpus = v.ToString().TrimStart();
+                                        }
 
-                                    if (v.Contains("Total RAM"))
-                                    {
-                                        string ln = "RAM (Memory) Results: " + v.ToString().TrimStart();
-                                        worksheet.Cells["B9"].Value = ln;
-                                        SSBPOsysAuditResults = getmManualResultsObject(SSBPOsysAuditResults, ln);
-                                    }
+                                        if (v.Contains("Processor"))
+                                        {
+                                            cpun = v.ToString().TrimStart();
+                                            sCpuc = "CPU (Processor) Results: " + cpus + " - " + cpun + "]".Replace("CCPU", "CPU");
+                                           // worksheet.Cells["B8"].Value = sCpuc;
+                                            SSBPOsysAuditResults = getResultsObject(SSBPOsysAuditResults, sCpuc);
+                                        }
+                                        if (v.Contains("RAM Score"))
+                                        {
+                                            rsn = v.ToString().TrimStart();
+                                        }
 
-                                    if (v.Contains("Total Space"))
-                                    {
-                                        string ln = "Disk (Hard Drive) Results:  " + v.ToString().TrimStart();
-                                        worksheet.Cells["B10"].Value = ln;
-                                        SSBPOsysAuditResults = getmManualResultsObject(SSBPOsysAuditResults, ln);
-                                    }
+                                        if (v.Contains("Total RAM"))
+                                        {
+                                            trn = v.ToString().TrimStart();
+                                            sRamc = "RAM (Memory) Results: " + rsn + " - " + trn;
+                                            //worksheet.Cells["B9"].Value = sRamc;
+                                            SSBPOsysAuditResults = getResultsObject(SSBPOsysAuditResults, sRamc);
+                                        }
 
-                                    if (v.Contains("Download"))
-                                    {
-                                        manualDownSpeed = v.ToString().TrimStart() + "] - ";
-                                    }
+                                        if (v.Contains("Disk Score"))
+                                        {
+                                            hdds = v.ToString().TrimStart();
+                                        }
+                                        if (v.Contains("Total Space"))
+                                        {
+                                            hddsp = v.ToString().TrimStart();
+                                        }
+                                        if (v.Contains("Available Space"))
+                                        {
+                                            hddas = v.ToString().TrimStart();
+                                            shdd = "Disk (Hard Drive) Results:  " + hdds + " - " + hddsp + " - " + hddas;
+                                           // worksheet.Cells["B10"].Value = shdd;
+                                            SSBPOsysAuditResults = getResultsObject(SSBPOsysAuditResults, shdd);
+                                        }
+                                        if (v.Contains("Download"))
+                                        {
+                                            manualDownSpeed = v.ToString().TrimStart();
+                                        }
 
-                                    if (v.Contains("Upload"))
-                                    {
-                                        manualUpSpeed = "[" + v.ToString().TrimStart() + "]";
-                                        string ln = "Network Results: " + manualDownSpeed + manualUpSpeed;
-                                        worksheet.Cells["B11"].Value = ln;
-                                        SSBPOsysAuditResults = getmManualResultsObject(SSBPOsysAuditResults, ln);
-                                    }
-                                }
+                                        if (v.Contains("Upload"))
+                                        {
+                                            manualUpSpeed = v.ToString().TrimStart();
+                                            internetSpeed = "Network Results: " + manualDownSpeed.Trim().Replace(" = ", ": ") + " - " + manualUpSpeed.Trim().Replace(" = ", ": ");
+                                           // worksheet.Cells["B11"].Value = internetSpeed;
+                                            SSBPOsysAuditResults = getResultsObject(SSBPOsysAuditResults, internetSpeed);
+                                        }
+                                 }//each
                             }
                         }
+
+                        if (SSBPOsysAuditResults.OSaResult == "Pass" & SSBPOsysAuditResults.CPUaResult == "Pass" & SSBPOsysAuditResults.RAMaResult == "Pass" & SSBPOsysAuditResults.InternetUpResult == "Pass" & SSBPOsysAuditResults.InternetDownResult == "Pass" & SSBPOsysAuditResults.HDDaResult == "Pass")
+                        {
+                            SSBPOsysAuditResults.aResult = "Pass";
+                        }
+                        else if (SSBPOsysAuditResults.aResult == "Pending")
+                        {
+                            SSBPOsysAuditResults.aResult = "Pending";
+                        }
+                        else
+                        {
+                            SSBPOsysAuditResults.aResult = "Fail";
+                        }
+
+                        if (SSBPOsysAuditResults.cCPU.Contains("given"))
+                        {
+                            SSBPOsysAuditResults.aFailedReason = "**Needs manual processing**";
+                        }
+
+                        if (!string.IsNullOrEmpty(SSBPOsysAuditResults.aFailedReason))
+                        {
+                            SSBPOsysAuditResults.aFailedReason = SSBPOsysAuditResults.aFailedReason.Substring(2);
+                        }
+
 
                         SSBPOsysAuditResults = getAuditStatus(SSBPOsysAuditResults);
                         generatePdf(ref ef, ref SSBPOsysAuditResults);
@@ -295,6 +357,7 @@ namespace NewWinAudit
 
 
                 }
+              //  sendCompletionNotification(CandidatesList);
             }
 
             return ProcesseManualdEmails;
@@ -302,10 +365,15 @@ namespace NewWinAudit
         private static void generatePdf(ref ExcelFile ef, ref SysAuditResults SSBPOsysAuditResults)
         {
             //Fill out the candidates results worksheet and save as pdf to send out
-            
+            DateTime dt = Convert.ToDateTime(SSBPOsysAuditResults.auditDate);
+
             ExcelWorksheet worksheet = ef.Worksheets.ActiveWorksheet;
             worksheet.Cells["C5"].Value = SSBPOsysAuditResults.cName;
-            worksheet.Cells["C6"].Value = SSBPOsysAuditResults.auditDate;
+           
+           
+            worksheet.Cells["C6"].Value = dt;
+            worksheet.Cells["C6"].Style.HorizontalAlignment = HorizontalAlignmentStyle.Left;
+            //worksheet.Cells["C6"].f
             worksheet.Cells["D6"].Value = SSBPOsysAuditResults.aResult;
 
             if (SSBPOsysAuditResults.aResult == "Pass")
@@ -317,17 +385,17 @@ namespace NewWinAudit
                 worksheet.Cells["D6"].Style.Font.Color = System.Drawing.Color.Red;
             }
             worksheet.Cells["C13"].Value = SSBPOsysAuditResults.cOS.Substring(0, 10).Replace(".", "").Trim();
-            worksheet.Cells["C14"].Value = SSBPOsysAuditResults.cHDD.Substring(64).Replace("]", "").Trim();
+            worksheet.Cells["C14"].Value = SSBPOsysAuditResults.cHDD.Substring(65).Replace("]", "").Replace("= ", "").Trim();
 
             if (SSBPOsysAuditResults.cRAM.Length > 35)
             {
-                worksheet.Cells["C15"].Value = SSBPOsysAuditResults.cRAM.Substring(33, 4).Trim().Replace("]", " ");
+                worksheet.Cells["C15"].Value = SSBPOsysAuditResults.cRAM.Substring(33, 4).Trim().Replace("]", "");
             }else
             {
-                worksheet.Cells["C15"].Value = SSBPOsysAuditResults.cRAM.Substring(30, 4).Trim().Replace("]", " ");
+                worksheet.Cells["C15"].Value = SSBPOsysAuditResults.cRAM.Substring(30, 4).Trim().Replace("]", "");
             }
 
-            worksheet.Cells["C16"].Value = SSBPOsysAuditResults.cCPU.Substring(11, 4).Trim();
+            worksheet.Cells["C16"].Value = SSBPOsysAuditResults.cCPU.Substring(12, 4).Replace("=", "").Trim().Replace("]", "");
             worksheet.Cells["C18"].Value = SSBPOsysAuditResults.cInternetUp.Trim() + " Mbps";
             worksheet.Cells["C19"].Value = SSBPOsysAuditResults.cInternetDown.Trim() + " Mbps";
             if (Convert.ToInt32(SSBPOsysAuditResults.cInternetUp) > 99)
@@ -340,7 +408,7 @@ namespace NewWinAudit
             }
 
             worksheet.Cells["D13"].Value = SSBPOsysAuditResults.OSaResult;
-            worksheet.Cells["D14"].Value = SSBPOsysAuditResults.HDDaResult;
+            worksheet.Cells["D14"].Value = SSBPOsysAuditResults.HDDaResult.Replace("= ", "").Trim();
             worksheet.Cells["D15"].Value = SSBPOsysAuditResults.RAMaResult;
             worksheet.Cells["D16"].Value = SSBPOsysAuditResults.CPUaResult;
             worksheet.Cells["D18"].Value = SSBPOsysAuditResults.InternetUpResult;
@@ -408,19 +476,21 @@ namespace NewWinAudit
                 worksheet.Cells["D19"].Style.Font.Color = System.Drawing.Color.Red;
             }
 
-            if (isTESTING)
-            {
-                ef.Save(@"\\Filesvr4\it\WinAudit\Test - Results_Archive\TESTING - " + SSBPOsysAuditResults.cName + " SystemAudit Results.pdf");
-                SSBPOsysAuditResults.attachmentFilename = @"\\Filesvr4\it\WinAudit\Test - Results_Archive\TESTING - " + SSBPOsysAuditResults.cName + " SystemAudit Results.pdf";
-            }
-            else
-            {
-                ef.Save(@"\\Filesvr4\it\WinAudit\Results_Archive\" + SSBPOsysAuditResults.cName + " SystemAudit Results.pdf");
-                SSBPOsysAuditResults.attachmentFilename = @"\\Filesvr4\it\WinAudit\Results_Archive\" + SSBPOsysAuditResults.cName + " SystemAudit Results.pdf";
-            }
+            if(SSBPOsysAuditResults.needsManualProcessing == false) {
 
-                //Save results as pdf
-            
+                if (isTESTING)
+                {
+                    ef.Save(@"\\Filesvr4\it\WinAudit\Test - Results_Archive\TESTING - " + SSBPOsysAuditResults.cName + " SystemAudit Results.pdf");
+                    SSBPOsysAuditResults.attachmentFilename = @"\\Filesvr4\it\WinAudit\Test - Results_Archive\TESTING - " + SSBPOsysAuditResults.cName + " SystemAudit Results.pdf";
+                }
+                else
+                {
+                    ef.Save(@"\\Filesvr4\it\WinAudit\Results_Archive\" + SSBPOsysAuditResults.cName + " SystemAudit Results.pdf");
+                    SSBPOsysAuditResults.attachmentFilename = @"\\Filesvr4\it\WinAudit\Results_Archive\" + SSBPOsysAuditResults.cName + " SystemAudit Results.pdf";
+                }
+            }
+            //Save results as pdf
+
             ef = null;
         }
         private static SysAuditResults getAuditStatus(SysAuditResults SSBPOsysAuditResults)
@@ -539,6 +609,7 @@ namespace NewWinAudit
         {
 
 
+
             if (l.Contains("Time"))
             {
                 sysAuditResults.auditDate = l.ToString().Substring(17);
@@ -594,10 +665,9 @@ namespace NewWinAudit
                 else
                 {
                     sysAuditResults.OSaResult = "Pass";
-
                 }
-
             }
+
             if (l.Contains("Computer"))
             {
                 sysAuditResults.cHost = l.ToString().Substring(15);
@@ -605,10 +675,9 @@ namespace NewWinAudit
 
             if (l.Contains("RAM"))
             {
-                 sysAuditResults.cRAM = l.ToString().Substring(22);    
-               // sysAuditResults.cRAM = l.ToString().Substring(54);
-                string[] cRAMs = sysAuditResults.cRAM.Split('-');
-                string cRAM1 = cRAMs[1].Replace("GB]", "").Replace("[Total RAM = ", "");
+                sysAuditResults.cRAM = l.ToString().Substring(22);
+                string[] cRAMs = sysAuditResults.cRAM.Split('=');
+                string cRAM1 = cRAMs[2].Replace("GB]", "");
 
                 if (Convert.ToInt32(cRAM1) < 2)
                 {
@@ -618,14 +687,15 @@ namespace NewWinAudit
                 else
                 {
                     sysAuditResults.RAMaResult = "Pass";
-
                 }
             }
 
             if (l.Contains("Network"))
             {
+                string[] uSpeed = l.Split('-');
+                int idx = 0;
 
-                sysAuditResults.cInternetUp = l.ToString().Substring(62).Replace("]", "").Trim();
+                sysAuditResults.cInternetUp = uSpeed[idx].Replace("Network Results: [Download Speed: ", "").Substring(1);
 
                 if (l.ToString().Substring(62).Replace("]", "").Trim().Contains("Kbps"))
                 {
@@ -642,23 +712,18 @@ namespace NewWinAudit
                 }
                 else
                 {
-
                     if (Convert.ToUInt32(sysAuditResults.cInternetUp) < 1)//could be problems
                     {
                         sysAuditResults.InternetUpResult = "Fail";
-
                         sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Upload speed insufficient";
                     }
                     else
                     {
                         sysAuditResults.InternetUpResult = "Pass";
-
                     }
-
-                 }
+                }
 
                 sysAuditResults.cInternetDown = l.ToString().Substring(34, 10).Replace("]", "");
-
 
                 if (Convert.ToUInt32(sysAuditResults.cInternetDown) < 3)
                 {
@@ -669,21 +734,20 @@ namespace NewWinAudit
                 {
                     sysAuditResults.InternetDownResult = "Pass";
                 }
-
-
-
             }
 
-            if (l.Contains("CPU Score "))
+            if (l.Contains("CPU"))
             {
-                sysAuditResults.cCPU = l.ToString().Substring(26);
+                sysAuditResults.cCPU = "[" + l.ToString().Substring(26).Replace("CC", "C");
 
                 string[] cCPUScores = sysAuditResults.cCPU.Split('=');
-                string cCPUScore1 = cCPUScores[1].Replace(" ", "");
-                cCPUScore1 = cCPUScores[1].Replace("] - [Processor", "").Trim();
+                string cCPUScore1 = cCPUScores[1].ToString(); // cCPUScores[1].Replace("]  -Core Processor] ]", "").Trim();
+                cCPUScore1 = cCPUScore1.Replace("] - [Processor ", "");
+
+
                 if (!cCPUScore1.Contains("given"))
                 {
-                    if (Convert.ToDouble(cCPUScore1) >= 4.8)
+                    if (Convert.ToDouble(cCPUScore1.Substring(0, 2)) >= 4.8)
                     {
                         sysAuditResults.CPUaResult = "Pass";
                     }
@@ -691,180 +755,6 @@ namespace NewWinAudit
                     {
                         sysAuditResults.CPUaResult = "Fail";
                         sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", CPU insufficient";
-
-                    }
-                }
-                else
-                {
-                    sysAuditResults.CPUaResult = "Fail";
-                    sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", **Needs manual processing**";
-                    sysAuditResults.needsManualProcessing = true;
-                    sysAuditResults.aResult = "Pending";
-                }
-            }
-
-           
-            sysAuditResults.aResultSummary = "[OS = " + sysAuditResults.cOS + "] - [C" + sysAuditResults.cCPU + " - " + sysAuditResults.cRAM + " - " + sysAuditResults.cHDD + " - [Download Speed = " + sysAuditResults.cInternetDown + " Mbps] - [Upload Speed = " + sysAuditResults.cInternetUp + " Mbps]";
-            return sysAuditResults;
-        }
-        private static SysAuditResults getmManualResultsObject(SysAuditResults sysAuditResults, string l)
-        {
-
-
-            if (l.Contains("Time"))
-            {
-                sysAuditResults.auditDate = l.ToString().Substring(17);
-            }
-
-            if (l.Contains("Full"))
-            {
-                sysAuditResults.cName = l.ToString().Substring(11);
-            }
-
-            if (l.Contains("Email"))
-            {
-                sysAuditResults.cEmail = l.ToString().Substring(15);
-            }
-
-            if (l.Contains("Total Space"))
-            {
-                sysAuditResults.cHDD = l.ToString().Substring(27);
-
-                string[] cHDDs = sysAuditResults.cHDD.Split('=');
-                string cHDD1 = cHDDs[3].Replace("GB]", "");
-
-                if (Convert.ToInt32(cHDD1) < 25)
-                {
-                    sysAuditResults.HDDaResult = "Fail";
-                    sysAuditResults.aFailedReason = ", Hard drive insufficient";
-                }
-                else
-                {
-                    sysAuditResults.HDDaResult = "Pass";
-                }
-            }
-
-            if (l.Contains("Operating"))
-            {
-                sysAuditResults.cOS = l.ToString().Substring(18);
-                string cOSs = sysAuditResults.cOS.Substring(14, 2);
-                //string[] cOS1s = cOSs.Split(' ');
-                //string cOS2 = cOS1s[1];
-
-                //if (cOS2.Trim().Length > 1)
-                //{
-                //    cOS1s = cOS2.Split('.');
-                //    cOS2 = cOS1s[0];
-                //}
-
-
-                if (Convert.ToInt64(cOSs.Trim()) < 7)
-                {
-                    sysAuditResults.OSaResult = "Fail";
-                    sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", OS insufficient";
-                }
-                else
-                {
-                    sysAuditResults.OSaResult = "Pass";
-
-                }
-
-            }
-            if (l.Contains("Computer"))
-            {
-                sysAuditResults.cHost = l.ToString().Substring(15);
-            }
-        
-            if (l.Contains("[Total RAM = "))
-            {
-                sysAuditResults.cRAM = l.ToString().Replace("RAM (Memory) Results: [Total RAM = ", "");
-
-                // sysAuditResults.cRAM = l.ToString().Substring(54);
-                string[] cRAMs = sysAuditResults.cRAM.Split(',');
-                string cRAM1 = cRAMs[0].Replace("GB]", "");
-
-                if (Convert.ToInt32(cRAM1) < 2)
-                {
-                    sysAuditResults.RAMaResult = "Fail";
-                    sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", RAM insufficient ";
-                }
-                else
-                {
-                    sysAuditResults.RAMaResult = "Pass";
-
-                }
-            }
-
-            if (l.Contains("Network"))
-            {
-
-                sysAuditResults.cInternetUp = l.ToString().Substring(62).Replace("]", "").Trim();
-
-                if (l.ToString().Substring(62).Replace("]", "").Trim().Contains("Kbps"))
-                {
-                    if (Convert.ToUInt32(sysAuditResults.cInternetUp) < 1000)
-                    {
-                        sysAuditResults.InternetUpResult = "Fail";
-                        sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Upload speed insufficient";
-                    }
-                    else
-                    {
-
-                        sysAuditResults.InternetUpResult = "Pass";
-                    }
-                }
-                else
-                {
-
-                    if (Convert.ToUInt32(sysAuditResults.cInternetUp) < 1)//could be problems
-                    {
-                        sysAuditResults.InternetUpResult = "Fail";
-
-                        sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Upload speed insufficient";
-                    }
-                    else
-                    {
-                        sysAuditResults.InternetUpResult = "Pass";
-
-                    }
-
-                }
-
-                sysAuditResults.cInternetDown = l.ToString().Substring(34, 10).Replace("]", "");
-
-
-                if (Convert.ToUInt32(sysAuditResults.cInternetDown) < 3)
-                {
-                    sysAuditResults.InternetDownResult = "Fail";
-                    sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Download speed insufficient";
-                }
-                else
-                {
-                    sysAuditResults.InternetDownResult = "Pass";
-                }
-
-
-
-            }
-
-            if (l.Contains("CPU Score "))
-            {
-                sysAuditResults.cCPU = l.ToString().Substring(26);
-
-                string[] cCPUScores = sysAuditResults.cCPU.Split('=');
-                string cCPUScore1 = cCPUScores[1].Replace(" ", "");
-                cCPUScore1 = cCPUScores[1].Replace("] - [Processor", "").Trim().Replace("]","");
-                if (!cCPUScore1.Contains("given"))
-                {
-                    if (Convert.ToDouble(cCPUScore1) >= 4.8)
-                    {
-                        sysAuditResults.CPUaResult = "Pass";
-                    }
-                    else
-                    {
-                        sysAuditResults.CPUaResult = "Fail";
-                        sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", CPU insufficient";
-
                     }
                 }
                 else
@@ -877,9 +767,23 @@ namespace NewWinAudit
             }
 
 
+            //}
+            //catch (System.Exception ex)
+            //{
+            //    throw new ApplicationException
+            //      ("Exception has occured: " + ex.Message);
+            //}
+
+            //if (!string.IsNullOrEmpty(sysAuditResults.aFailedReason))
+            //{
+            //    sysAuditResults.aFailedReason = sysAuditResults.aFailedReason.Remove(0, 1);
+            //}
+
             sysAuditResults.aResultSummary = "[OS = " + sysAuditResults.cOS + "] - [C" + sysAuditResults.cCPU + " - " + sysAuditResults.cRAM + " - " + sysAuditResults.cHDD + " - [Download Speed = " + sysAuditResults.cInternetDown + " Mbps] - [Upload Speed = " + sysAuditResults.cInternetUp + " Mbps]";
             return sysAuditResults;
+         
         }
+       
         //Get unseen emails from Sysaudit mailbox
 
 
@@ -1207,6 +1111,7 @@ namespace NewWinAudit
                     
                     MailAddress from = new MailAddress("notify@statesidebpo.com");
                     MailAddress to = new MailAddress(recipient);
+                    MailAddress cc = new MailAddress("brodriguez@statesidebpo.com");
 
                     if (isTESTING)
                     {
@@ -1216,6 +1121,7 @@ namespace NewWinAudit
                     MailMessage myMail = new MailMessage(from, to);
                     myMail.IsBodyHtml = true;                 
                     myMail.Subject = "System audit results for " + cadidateName;
+                    myMail.CC.Add(cc);
 
                     if (isTESTING)
                     {
@@ -1228,11 +1134,12 @@ namespace NewWinAudit
                     Attachment inlineStatetSideLogo = new Attachment(@"\\filesvr4\IT\WinAudit\SysAudit App\StatesideLogo.png");
                     Attachment inlineBitLeverLogo = new Attachment(@"\\filesvr4\IT\WinAudit\SysAudit App\Bit-LeverLogo.png");
 
-                    Attachment SysAuditResults = new Attachment(@"\\Filesvr4\it\WinAudit\Results_Archive\" + cadidateName + " SystemAudit Results.pdf");
+                    Attachment SysAuditResults = new Attachment(@"\\Filesvr4\it\WinAudit\\Test - Results_Archive\TESTING - " + cadidateName + " SystemAudit Results.pdf");
+                    
 
-                    if (isTESTING)
+                    if (!isTESTING)
                     {
-                        SysAuditResults = new Attachment(@"\\Filesvr4\it\WinAudit\\Test - Results_Archive\TESTING - " + cadidateName + " SystemAudit Results.pdf");
+                        SysAuditResults = new Attachment(@"\\Filesvr4\it\WinAudit\Results_Archive\" + cadidateName + " SystemAudit Results.pdf");
                     }
 
                     myMail.Attachments.Add(SysAuditResults);
@@ -1311,6 +1218,7 @@ namespace NewWinAudit
 
                  
                     string reason = c.aFailedReason;
+                  
 
                     if (c.aFailedReason != null)
                     {

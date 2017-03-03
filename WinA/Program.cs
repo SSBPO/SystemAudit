@@ -39,15 +39,15 @@ namespace StatesideBpo
             // Declare app instance / list to hold all sysaudits 
 
             SystemAudit xxx_SysAudit = new SystemAudit();
-            ////isTESTING = false;
-            isTESTING = true;
+            isTESTING = false;
+            //isTESTING = true;
             int ProcessedEmails;
             int ProcessedManualEmails;
 
             List<SysAuditResults> CandidatesList = new List<SysAuditResults>();
             List<SysAuditResults> ManualCandidatesList = new List<SysAuditResults>();
 
-            using (ImapClient imapClient = new ImapClient("secure.emailsrvr.com", "systemaudit@statesidebpo.com", "g4d5fg4df!!2 ew", AuthMethods.Login, 993, true))
+            using (ImapClient imapClient = new ImapClient("secure.emailsrvr.com", "systemaudit@statesidebpo.com", "G4d5fG34!df!!2ew", AuthMethods.Login, 993, true))
             {
 
                 Lazy<AE.Net.Mail.MailMessage>[] Manualmsgs = getManualMailMessages(imapClient);   //Need to improve this
@@ -569,9 +569,9 @@ namespace StatesideBpo
                 if (l.Contains("Network"))
                 {
                     string[] uSpeed = l.Split('-');
-                    int idx = 0;
+                 
 
-                    sysAuditResults.cInternetUp = uSpeed[idx].Replace("Network Results: [Download Speed: ", "").Substring(1);
+                    sysAuditResults.cInternetUp = uSpeed[1].ToString().Substring(16, 4).Replace(".","");
 
                     if (l.ToString().Substring(62).Replace("]", "").Trim().Contains("Kbps"))
                     {
@@ -588,7 +588,9 @@ namespace StatesideBpo
                     }
                     else
                     {
-                        if (Convert.ToUInt32(sysAuditResults.cInternetUp) < 1)//could be problems
+                    int Iups = Convert.ToInt32(sysAuditResults.cInternetUp.Substring(0,1));
+
+                        if (Iups < 1)//could be problems
                         {
                             sysAuditResults.InternetUpResult = "Fail";
                             sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Upload speed insufficient";
@@ -617,13 +619,16 @@ namespace StatesideBpo
                     sysAuditResults.cCPU = "[" + l.ToString().Substring(26).Replace("CC", "C");
 
                     string[] cCPUScores = sysAuditResults.cCPU.Split('=');
-                    string cCPUScore1 = cCPUScores[1].ToString(); // cCPUScores[1].Replace("]  -Core Processor] ]", "").Trim();
-                    cCPUScore1 = cCPUScore1.Replace("] - [Processor ", "");
+                    string cCPUScore1 = cCPUScores[1].Replace("] - [Processor ", "").Trim();
+                //cCPUScore1 = cCPUScore1.Replace("] - [Processor ", "");
 
+                     
 
                     if (!cCPUScore1.Contains("given"))
                     {
-                        if (Convert.ToDouble(cCPUScore1.Substring(0,2)) >= 4.8)
+                        decimal cCPU = Convert.ToDecimal(cCPUScore1);
+
+                        if (cCPU >= Convert.ToDecimal(4.8))
                         {
                             sysAuditResults.CPUaResult = "Pass";
                         }
@@ -837,20 +842,9 @@ namespace StatesideBpo
                 set
                 {
 
-                    string[] tf = value.Split(' ');
-                    int idx = 0;
-
-                    if (tf[0] == "" | tf[0] == ":" | tf[0] == "=")
-                        idx = 1;
-
-                    if (tf[idx].ToString().Length > 1) {
-                        _internetUp = tf[idx].ToString().Substring(0, 2).Replace(".", "").Replace(";", "");
-                    }
-                    
-                    else
-                    {
-                        _internetUp = tf[idx].ToString();
-                    }
+                   
+                        _internetUp = value;
+                  
                 }
             }
             public string cInternetDown
@@ -1009,13 +1003,15 @@ namespace StatesideBpo
                     if (isTESTING)
                     {
                         Outlook.Recipient otRecip = (Outlook.Recipient)otMsg.Recipients.Add("brodriguez@statesidebpo.com"); //jreiner@statesidebpo.com  brodriguez@statesidebpo.com
+                        otMsg.BCC = "brodriguez@statesidebpo.com";
                         otMsg.Subject = "TESTING - SSBPO System audit results";
                         sDisplayName = "TESTING - " + cadidateName + " SystemAudit Results.pdf";
                         sSource = attachmentFilename;
                     }
                     else
                     {
-                        Outlook.Recipient otRecip = (Outlook.Recipient)otMsg.Recipients.Add(recipient);
+                        Outlook.Recipient otRecip = (Outlook.Recipient)otMsg.Recipients.Add(recipient);                        
+                        otMsg.BCC = "systemaudit@statesidebpo.comm";
                         otMsg.Subject = "SSBPO System audit results";
                         sDisplayName = cadidateName + " SystemAudit Results.pdf";
                         sSource = attachmentFilename;
