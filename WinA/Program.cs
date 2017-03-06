@@ -39,8 +39,8 @@ namespace StatesideBpo
             // Declare app instance / list to hold all sysaudits 
 
             SystemAudit xxx_SysAudit = new SystemAudit();
-            isTESTING = false;
-            //isTESTING = true;
+            //isTESTING = false;
+            isTESTING = true;
             int ProcessedEmails;
             int ProcessedManualEmails;
 
@@ -59,7 +59,9 @@ namespace StatesideBpo
 
 
             }
-            Console.Write("");    
+            Console.WriteLine();
+            Console.WriteLine("");
+            Console.WriteLine("################################################################################");
             string s = ProcessedEmails + " Audits and " + ProcessedManualEmails + " manual Audits were processed. Good Bye!";
             Console.SetCursorPosition((Console.WindowWidth - s.Length) / 2, Console.CursorTop);
             Console.WriteLine(s);
@@ -321,8 +323,6 @@ namespace StatesideBpo
                 Console.SetCursorPosition((Console.WindowWidth - s3.Length) / 2, Console.CursorTop);
                 Console.WriteLine(s3);
 
-
-
                 HtmlToText stripHtml = new HtmlToText();
                 //Foreach unseen email found in the mailbox
                 foreach (Lazy<AE.Net.Mail.MailMessage> msg in msgs)
@@ -340,9 +340,7 @@ namespace StatesideBpo
 
 
                     if ((msg.Value.Body != "") && msg.Value != null)
-                    {
-
-
+                    {  
                         string[] lines = stripHtml.Convert(msg.Value.Body).Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
                         int i = 2;
                         List<String> line = lines.ToList();
@@ -350,8 +348,6 @@ namespace StatesideBpo
                         SysAuditXLWApp = new Excel.Application();
                         SysAuditWWorkBook = SysAuditXLWApp.Workbooks.Open(@"\\filesvr4\IT\WinAudit\SysAudit App\WinAuditPro.xltm"); // Open the SysAudit Excel template
                         SysAuditWWorkSheet = SysAuditWWorkBook.Worksheets[1] as Excel.Worksheet; // Set sheet 1 as the active sheet in Excel template
-
-
 
                         foreach (string l in line.ToList()) //Foreach of the lines in the email
                         {
@@ -450,7 +446,10 @@ namespace StatesideBpo
 
                 foreach (SysAuditResults r in CandidatesList)
                 {
-                    SysAuditWWorkSheet2.Cells[index, 1] = r.auditDate;
+                    string day = r.auditDate;
+                    day = day.Replace("p.m.", "PM");
+
+                    SysAuditWWorkSheet2.Cells[index, 1] = day;
                     SysAuditWWorkSheet2.Cells[index, 2] = r.cName;
                     SysAuditWWorkSheet2.Cells[index, 3] = r.cEmail;
                     SysAuditWWorkSheet2.Cells[index, 4] = r.aResultSummary;
@@ -619,10 +618,14 @@ namespace StatesideBpo
                     sysAuditResults.cCPU = "[" + l.ToString().Substring(26).Replace("CC", "C");
 
                     string[] cCPUScores = sysAuditResults.cCPU.Split('=');
-                    string cCPUScore1 = cCPUScores[1].Replace("] - [Processor ", "").Trim();
-                //cCPUScore1 = cCPUScore1.Replace("] - [Processor ", "");
+                    string cCPUScore1 = cCPUScores[1].Replace("]  - [Processor", "").Trim();
+                    cCPUScore1 = cCPUScore1.Replace("] - [Processor", "");
+                                                    
 
-                     
+
+
+
+
 
                     if (!cCPUScore1.Contains("given"))
                     {
@@ -1011,7 +1014,7 @@ namespace StatesideBpo
                     else
                     {
                         Outlook.Recipient otRecip = (Outlook.Recipient)otMsg.Recipients.Add(recipient);                        
-                        otMsg.BCC = "systemaudit@statesidebpo.comm";
+                        otMsg.BCC = "recruiters@statesidebpo.com";
                         otMsg.Subject = "SSBPO System audit results";
                         sDisplayName = cadidateName + " SystemAudit Results.pdf";
                         sSource = attachmentFilename;
