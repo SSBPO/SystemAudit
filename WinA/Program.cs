@@ -39,8 +39,8 @@ namespace StatesideBpo
             // Declare app instance / list to hold all sysaudits 
 
             SystemAudit xxx_SysAudit = new SystemAudit();
-            //isTESTING = false;
-            isTESTING = true;
+            isTESTING = false;
+            //isTESTING = true;
             int ProcessedEmails;
             int ProcessedManualEmails;
 
@@ -56,6 +56,13 @@ namespace StatesideBpo
 
                 Lazy<AE.Net.Mail.MailMessage>[] msgs = getMailMessages(imapClient);
                 ProcessedEmails = processNormalAudits(CandidatesList, imapClient, msgs);
+
+
+                if (CandidatesList.Count() > 0)
+                {
+                    createBitLeverImport(CandidatesList);
+                    sendCompletionNotification(CandidatesList);
+                }
 
 
             }
@@ -296,8 +303,7 @@ namespace StatesideBpo
         {
 
             killExcel();
-
-            msgs = getMailMessages(imapClient);
+            
             int ProcessedEmails = 0;
 
             if (msgs.Count() != 0)
@@ -398,11 +404,6 @@ namespace StatesideBpo
                     CandidatesList.Add(SSBPOsysAuditResults);
                 }
 
-                if (CandidatesList.Count() > 0)
-                {
-                    createBitLeverImport(CandidatesList);
-                    sendCompletionNotification(CandidatesList);
-                }
             }
 
             return ProcessedEmails;
