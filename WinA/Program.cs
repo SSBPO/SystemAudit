@@ -621,11 +621,6 @@ namespace StatesideBpo
                     string[] cCPUScores = sysAuditResults.cCPU.Split('=');
                     string cCPUScore1 = cCPUScores[1].Replace("]  - [Processor", "").Trim();
                     cCPUScore1 = cCPUScore1.Replace("] - [Processor", "");
-                                                    
-
-
-
-
 
 
                     if (!cCPUScore1.Contains("given"))
@@ -664,7 +659,7 @@ namespace StatesideBpo
             //    sysAuditResults.aFailedReason = sysAuditResults.aFailedReason.Remove(0, 1);
             //}
 
-            sysAuditResults.aResultSummary = "[OS = " + sysAuditResults.cOS + "] - [C" + sysAuditResults.cCPU + " - " + sysAuditResults.cRAM + " - " + sysAuditResults.cHDD + " - [Download Speed = " + sysAuditResults.cInternetDown + " Mbps] - [Upload Speed = " + sysAuditResults.cInternetUp + " Mbps]";
+            sysAuditResults.aResultSummary = "[OS = " + sysAuditResults.cOS + "] - " + sysAuditResults.cCPU + " - " + sysAuditResults.cRAM + " - " + sysAuditResults.cHDD + " - [Download Speed = " + sysAuditResults.cInternetDown + " Mbps] - [Upload Speed = " + sysAuditResults.cInternetUp + " Mbps]";
             return sysAuditResults;
         }
 
@@ -865,8 +860,13 @@ namespace StatesideBpo
                     if (tf[0] == "" | tf[0] == ":")
                         idx = 1;
 
+                    if (tf[idx].Length > 1) { 
                     _internetDown = tf[idx].ToString().Substring(0, 2).Replace(".", "");
-
+                    }
+                    else
+                    {
+                        _internetDown = tf[idx].ToString();
+                    }
                 }
             }
             public string aResult
