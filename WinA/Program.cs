@@ -35,6 +35,7 @@ namespace StatesideBpo
             Console.WriteLine("");
             Console.WriteLine("################################################################################");
             Console.WriteLine("#######################      SysAuditPro  ver.2    #############################");
+            Console.WriteLine("################################################################################");
             Console.WriteLine("");
             // Declare app instance / list to hold all sysaudits 
 
@@ -52,7 +53,6 @@ namespace StatesideBpo
 
                 Lazy<AE.Net.Mail.MailMessage>[] Manualmsgs = getManualMailMessages(imapClient);   //Need to improve this
                 ProcessedManualEmails = proccessManualAudits(CandidatesList, imapClient, Manualmsgs);
-               
 
                 Lazy<AE.Net.Mail.MailMessage>[] msgs = getMailMessages(imapClient);
                 ProcessedEmails = processNormalAudits(CandidatesList, imapClient, msgs);
@@ -62,10 +62,10 @@ namespace StatesideBpo
                 {
                     createBitLeverImport(CandidatesList);
                     sendCompletionNotification(CandidatesList);
+                    createFileImport(CandidatesList);
                 }
-
-
             }
+
             Console.WriteLine();
             Console.WriteLine("");
             Console.WriteLine("################################################################################");
@@ -251,6 +251,7 @@ namespace StatesideBpo
                             }
                         }
 
+                
 
                         if (SSBPOsysAuditResults.OSaResult == "Pass" & SSBPOsysAuditResults.CPUaResult == "Pass" & SSBPOsysAuditResults.RAMaResult == "Pass" & SSBPOsysAuditResults.InternetUpResult == "Pass" & SSBPOsysAuditResults.InternetDownResult == "Pass" & SSBPOsysAuditResults.HDDaResult == "Pass")
                         {
@@ -279,7 +280,9 @@ namespace StatesideBpo
                         {
                             SSBPOsysAuditResults.aFailedReason = SSBPOsysAuditResults.aFailedReason.Substring(2);
                         }
-                       
+
+                        SSBPOsysAuditResults.IsManual = true;
+
                         object misValue = System.Reflection.Missing.Value; //Get misssing.vlaue variable
                         SysAuditWWorkBook.Close(false, misValue, misValue);
                         SysAuditWWorkSheet = null;
@@ -291,9 +294,7 @@ namespace StatesideBpo
 
                 }
 
-              //  sendCompletionNotification(CandidatesList);
-
-            }
+                   }
 
             return ProcesseManualdEmails;
 
@@ -371,7 +372,7 @@ namespace StatesideBpo
                         }
                         else if (SSBPOsysAuditResults.aResult == "Pending")
                         {
-                            SSBPOsysAuditResults.aResult = "Pending";
+                            SSBPOsysAuditResults.aResult = "Pending";       
                         }
                         else
                         {
@@ -447,24 +448,30 @@ namespace StatesideBpo
 
                 foreach (SysAuditResults r in CandidatesList)
                 {
-                    string day = r.auditDate;
-                    day = day.Replace("p.m.", "PM");
 
-                    SysAuditWWorkSheet2.Cells[index, 1] = day;
-                    SysAuditWWorkSheet2.Cells[index, 2] = r.cName;
-                    SysAuditWWorkSheet2.Cells[index, 3] = r.cEmail;
-                    SysAuditWWorkSheet2.Cells[index, 4] = r.aResultSummary;
-                    SysAuditWWorkSheet2.Cells[index, 5] = r.aResult;
-                    SysAuditWWorkSheet2.Cells[index, 6] = Environment.UserName;
-                    if (r.aResult == "Pending")
-                        SysAuditWWorkSheet2.Cells[index, 7] = "No";
-                    else
+                    if (r.IsManual != true)
                     {
-                        SysAuditWWorkSheet2.Cells[index, 7] = "Yes";
+
+                        string day = r.auditDate;
+                        day = day.Replace("p.m.", "PM");
+
+                        SysAuditWWorkSheet2.Cells[index, 1] = day;
+                        SysAuditWWorkSheet2.Cells[index, 2] = r.cName;
+                        SysAuditWWorkSheet2.Cells[index, 3] = r.cEmail;
+                        SysAuditWWorkSheet2.Cells[index, 4] = r.aResultSummary;
+                        SysAuditWWorkSheet2.Cells[index, 5] = r.aResult;
+                        SysAuditWWorkSheet2.Cells[index, 6] = Environment.UserName;
+                        if (r.aResult == "Pending")
+                            SysAuditWWorkSheet2.Cells[index, 7] = "No";
+                        else
+                        {
+                            SysAuditWWorkSheet2.Cells[index, 7] = "Yes";
+                        }
+                        SysAuditWWorkSheet2.Cells[index, 8] = r.aFailedReason;
+                        SysAuditWWorkSheet2.Cells[index, 9] = DateTime.Now;
+                        index = index + 1;
                     }
-                    SysAuditWWorkSheet2.Cells[index, 8] = r.aFailedReason;
-                    SysAuditWWorkSheet2.Cells[index, 9] = DateTime.Now;
-                    index = index + 1;
+
 
                 }
 
@@ -476,8 +483,34 @@ namespace StatesideBpo
             SysAuditXLWApp2.Quit();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
+            
+        }
+        private static void createFileImport(List<SysAuditResults> CandidatesList)
+        {
+
+
+            foreach (SysAuditResults r in CandidatesList)
+            {
+
+                if (r.IsManual != true)
+                {
+                    string line = "";
+                    string day = r.auditDate;     
+                    day = day.Replace("p.m.", "PM");
+
+                    if (r.aResult == "Pending")
+                        line = "No";
+                    else
+                    {
+                        line = "Yes";
+                    }
+                    line = day + "," + r.cName + "," + r.cEmail + "," + r.aResultSummary + "," + r.aResult + "," + Environment.UserName + "," + r.aFailedReason + ", " + DateTime.Now;
+                    File.AppendAllText(@"\\filesvr4\IT\WinAudit\4BitLeverImport\AuditMaster.csv", line + Environment.NewLine);
+
+                }
+
+            }
+
         }
 
         private static SysAuditResults getResultsObject(SysAuditResults sysAuditResults, string l)
@@ -553,7 +586,7 @@ namespace StatesideBpo
                 {
                     sysAuditResults.cRAM = l.ToString().Substring(22);
                     string[] cRAMs = sysAuditResults.cRAM.Split('=');
-                    string cRAM1 = cRAMs[2].Replace("GB]", "");
+                    string cRAM1 = cRAMs[2].Replace("GB]", "").Replace(", [Disk Score", "");
 
                     if (Convert.ToInt32(cRAM1) < 2)
                     {
@@ -569,11 +602,35 @@ namespace StatesideBpo
                 if (l.Contains("Network"))
                 {
                     string[] uSpeed = l.Split('-');
-                 
+                    string[] up = uSpeed[1].ToString().Substring(16, 4).Split('.');
+                    string[] dp = l.ToString().Substring(34, 10).Replace("]", "").Split('.');
 
-                    sysAuditResults.cInternetUp = uSpeed[1].ToString().Substring(16, 4).Replace(".","");
+                    sysAuditResults.cInternetDown = dp[0].Trim();
+                    sysAuditResults.cInternetUp = up[0].Trim();
+               
 
-                    if (l.ToString().Substring(62).Replace("]", "").Trim().Contains("Kbps"))
+                    if (sysAuditResults.cInternetUp.Length > 1)
+                    {
+                        sysAuditResults.cInternetUp = up[0].Substring(0, 2);
+                    }
+                    else
+                    {
+                        sysAuditResults.cInternetUp = dp[0];
+                    }
+
+
+                    if (sysAuditResults.cInternetDown.Length > 1)
+                    {
+                        sysAuditResults.cInternetDown = dp[0].Substring(0, 2);
+                    }else
+                    {
+                        sysAuditResults.cInternetDown = dp[0];
+                    }
+                    
+
+
+
+                    if (l.ToString().Trim().Contains("Kbps"))
                     {
                         if (Convert.ToUInt32(sysAuditResults.cInternetUp) < 1000)
                         {
@@ -582,15 +639,12 @@ namespace StatesideBpo
                         }
                         else
                         {
-
                             sysAuditResults.InternetUpResult = "Pass";
                         }
                     }
                     else
                     {
-                    int Iups = Convert.ToInt32(sysAuditResults.cInternetUp.Substring(0,1));
-
-                        if (Iups < 1)//could be problems
+                        if (Convert.ToUInt32(sysAuditResults.cInternetUp) < 1)//could be problems
                         {
                             sysAuditResults.InternetUpResult = "Fail";
                             sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Upload speed insufficient";
@@ -601,25 +655,24 @@ namespace StatesideBpo
                         }
                     }
 
-                    sysAuditResults.cInternetDown = l.ToString().Substring(34, 10).Replace("]", "");
-
-                    if (Convert.ToUInt32(sysAuditResults.cInternetDown) < 3)
-                    {
-                        sysAuditResults.InternetDownResult = "Fail";
-                        sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Download speed insufficient";
-                    }
-                    else
-                    {
-                        sysAuditResults.InternetDownResult = "Pass";
-                    }
+                    
+                if (Convert.ToUInt32(sysAuditResults.cInternetDown) < 3)//could be problems
+                {
+                    sysAuditResults.InternetDownResult = "Fail";
+                    sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Download speed insufficient";
                 }
+                else
+                {
+                    sysAuditResults.InternetDownResult = "Pass";
+                }
+            }
 
                 if (l.Contains("CPU"))
                 {
                     sysAuditResults.cCPU = "[" + l.ToString().Substring(26).Replace("CC", "C");
 
                     string[] cCPUScores = sysAuditResults.cCPU.Split('=');
-                    string cCPUScore1 = cCPUScores[1].Replace("]  - [Processor", "").Trim();
+                    string cCPUScore1 = cCPUScores[1].Replace("]  - [Processor", "").Trim().Replace("]  - Core Processor] ]", "").Trim();
                     cCPUScore1 = cCPUScore1.Replace("] - [Processor", "");
 
 
@@ -687,6 +740,7 @@ namespace StatesideBpo
         {
 
             private bool _needsmanualprocessing;
+            private bool _isManual;
 
             private string _afailedreason;
             private string _date;
@@ -968,6 +1022,19 @@ namespace StatesideBpo
                 }
             }
 
+            public bool IsManual
+            {
+                get
+                {
+                    return _isManual;
+                }
+                set
+                {
+
+                    _isManual = value;
+                }
+            }
+           
         }
 
         public static Outlook.Account getAccountForEmailAddress(Outlook.Application application, string smtpAddress)
@@ -1049,6 +1116,7 @@ namespace StatesideBpo
                 Outlook.MailItem otMsg = otApp.CreateItem(Outlook.OlItemType.olMailItem); // Create mail object
                 Outlook.Inspector oInspector = otMsg.GetInspector;
                 otMsg.SendUsingAccount = getAccountForEmailAddress(otApp, "systemaudit@statesidebpo.com");
+
                 if (isTESTING)
                 {
                     Outlook.Recipient otRecip = (Outlook.Recipient)otMsg.Recipients.Add("brodriguez@statesidebpo.com"); //brodriguez@statesidebpo.com jreiner  //helpdesk@statesidebpo.com
