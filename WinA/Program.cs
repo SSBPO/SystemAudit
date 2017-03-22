@@ -57,11 +57,12 @@ namespace StatesideBpo
                 Lazy<AE.Net.Mail.MailMessage>[] msgs = getMailMessages(imapClient);
                 ProcessedEmails = processNormalAudits(CandidatesList, imapClient, msgs);
 
+                sendCompletionNotification(CandidatesList);
 
                 if (CandidatesList.Count() > 0)
                 {
                     createBitLeverImport(CandidatesList);
-                    sendCompletionNotification(CandidatesList);
+                   
                     createFileImport(CandidatesList);
                 }
             }
@@ -77,7 +78,7 @@ namespace StatesideBpo
             Console.WriteLine();
             Thread.Sleep(5000);
         }
-
+      
         private static int proccessManualAudits(List<SysAuditResults> CandidatesList, ImapClient imapClient, Lazy<AE.Net.Mail.MailMessage>[] Manualmsgs)
         {
 
@@ -498,13 +499,14 @@ namespace StatesideBpo
                     string day = r.auditDate;     
                     day = day.Replace("p.m.", "PM");
 
-                    if (r.aResult == "Pending")
-                        line = "No";
-                    else
-                    {
-                        line = "Yes";
-                    }
-                    line = day + "," + r.cName + "," + r.cEmail + "," + r.aResultSummary + "," + r.aResult + "," + Environment.UserName + "," + r.aFailedReason + ", " + DateTime.Now;
+                    //if (r.aResult == "Pending")
+                    //    line = "No";
+                    //else
+                    //{
+                    //    line = "Yes";
+                    //}
+
+                    line = day.Trim() + "," + r.cName + "," + r.cEmail + "," + r.aResultSummary + "," + r.aResult + "," + Environment.UserName + "," + r.aFailedReason + ", " + DateTime.Now;
                     File.AppendAllText(@"\\filesvr4\IT\WinAudit\4BitLeverImport\AuditMaster.csv", line + Environment.NewLine);
 
                 }
@@ -1142,37 +1144,40 @@ namespace StatesideBpo
                     bd = "<h2> " + CandidatesList.Count() + " Audits were processed</h2>";
                 }
 
-                string attachmentFilename = "";
-                bd = bd + "<table border = " + "1" + " cellpadding = " + "6" + " cellspacing = " + "5" + "><tbody>";
+
+                if(CandidatesList.Count()  != 0) {
+
+                    string attachmentFilename = "";
+                    bd = bd + "<table border = " + "1" + " cellpadding = " + "6" + " cellspacing = " + "5" + "><tbody>";
 
 
-                foreach (SysAuditResults c in CandidatesList)
-                {
-
-                    attachmentFilename = @"\\filesvr4\IT\WinAudit\Results_Archive\" + c.cName + " SystemAudit Results.pdf";
-                    string reason = c.aFailedReason;
-
-                    if (c.aFailedReason != null)
-                    {
-                        reason = " - " + c.aFailedReason;
-                    }
-
-                    if (c.needsManualProcessing)
+                    foreach (SysAuditResults c in CandidatesList)
                     {
 
-                        bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'33%'" + ">" + c.cEmail + "</td><td width=" + "'43%'" + ">" + c.aResult + reason + "</td></tr>";
-                        sendMail(c.cEmail, attachmentFilename, c.cName, isTESTING);
-                    }
-                    else
-                    {
-                        bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'33%'" + ">" + c.cEmail + "</td><td width=" + "'43%'" + ">" + c.aResult + reason + "</td></tr>";
-                        sendMail(c.cEmail, attachmentFilename, c.cName, isTESTING);
+                        attachmentFilename = @"\\filesvr4\IT\WinAudit\Results_Archive\" + c.cName + " SystemAudit Results.pdf";
+                        string reason = c.aFailedReason;
+
+                        if (c.aFailedReason != null)
+                        {
+                            reason = " - " + c.aFailedReason;
+                        }
+
+                        if (c.needsManualProcessing)
+                        {
+
+                            bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'33%'" + ">" + c.cEmail + "</td><td width=" + "'43%'" + ">" + c.aResult + reason + "</td></tr>";
+                            sendMail(c.cEmail, attachmentFilename, c.cName, isTESTING);
+                        }
+                        else
+                        {
+                            bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'33%'" + ">" + c.cEmail + "</td><td width=" + "'43%'" + ">" + c.aResult + reason + "</td></tr>";
+                            sendMail(c.cEmail, attachmentFilename, c.cName, isTESTING);
+                        }
+
                     }
 
+                    bd = bd + "</tbody></table>";
                 }
-
-                bd = bd + "</tbody></table>";
-
                 otMsg.HTMLBody = Regex.Replace(bd, @"[^\u0000-\u007F]", " ");
 
 
