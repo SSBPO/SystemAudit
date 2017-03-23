@@ -49,14 +49,12 @@ namespace NewWinAudit
                
                 // Check mailbox and get any messages not seen and sent by systemaudit@bit-lever.com
                 IEnumerable<uint> uids = imapClient.Search(S22.Imap.SearchCondition.Unseen().And(S22.Imap.SearchCondition.From("systemaudit@bit-lever.com")));
-                IEnumerable<System.Net.Mail.MailMessage> messages = imapClient.GetMessages(uids);
-                
+                IEnumerable<System.Net.Mail.MailMessage> messages = imapClient.GetMessages(uids);                
                 xxx_SysAudit.ProcessedEmails = processNormalAudits(CandidatesList, messages);
 
                 string s1 = "There are " + xxx_SysAudit.ProcessedEmails + " new emails to process...";
                 Console.SetCursorPosition((Console.WindowWidth - s1.Length) / 2, Console.CursorTop);
-                Console.WriteLine(s1);
-                Console.Write("");
+                Console.WriteLine(s1);            
 
                 IEnumerable<uint> manualuids = imapClient.Search(S22.Imap.SearchCondition.Unseen().And(S22.Imap.SearchCondition.From("no-reply@bit-lever.com")));
                 IEnumerable<System.Net.Mail.MailMessage> manualmessages = imapClient.GetMessages(manualuids);
@@ -65,13 +63,20 @@ namespace NewWinAudit
                 string s2 = "There are " + xxx_SysAudit.ProcessedManualEmails + " manual emails to process...";
                 Console.SetCursorPosition((Console.WindowWidth - s2.Length) / 2, Console.CursorTop);
                 Console.WriteLine(s2);
-              
-
 
                 if (CandidatesList.Count() > 0)
                 {
                     createBitLeverImport(CandidatesList);
-                    sendCompletionNotification(CandidatesList);
+                    createFileImport(CandidatesList);
+                }
+
+
+                sendCompletionNotification(CandidatesList);
+
+                if (CandidatesList.Count() > 0)
+                {
+                    createBitLeverImport(CandidatesList);
+
                     createFileImport(CandidatesList);
                 }
             }
@@ -134,7 +139,7 @@ namespace NewWinAudit
                     {
 
                         //Strip Html from emal and split into 14 lines  
-                        string[] line = stripHtml.Convert(msg.Body).Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
+                        string[] line = stripHtml.Convert(msg.Body).Split(new string[] { "\r\n", "\n","* " }, StringSplitOptions.None);
 
                         //Foreach line in the email
                         foreach (string l in line.ToList())
@@ -527,7 +532,7 @@ namespace NewWinAudit
             //write a row for each systemaudit result in the list
             foreach (SysAuditResults r in CandidatesList)
                 {
-                    worksheet.Cells[index, 0].Value = r.auditDate.Trim();
+                    worksheet.Cells[index, 0].Value = Convert.ToDateTime(r.auditDate.Trim()).ToString("g", CultureInfo.CreateSpecificCulture("en-us"));
                     worksheet.Cells[index, 1].Value = r.cName.Trim();
                     worksheet.Cells[index, 2].Value = r.cEmail.Trim();
                     worksheet.Cells[index, 3].Value = r.aResultSummary.Trim();
@@ -1181,19 +1186,18 @@ namespace NewWinAudit
 
                 // add from,to mailaddresses
                 MailAddress from = new MailAddress("notify@statesidebpo.com");
-                MailAddress to = new MailAddress("helpdesk@statesidebpo.com");
-
-       
-
+                MailAddress to = new MailAddress("brodriguez@statesidebpo.com"); //to = new MailAddress("helpdesk@statesidebpo.com");
                 MailMessage myMail = new MailMessage(from, to);
-                myMail.IsBodyHtml = true;
                 myMail.Subject = DateTime.Now + " SystemAudit Processing run completed successfully";
 
-                if (isTESTING)
+                if (isTESTING == true)
                 {
                     to = new MailAddress("brodriguez@statesidebpo.com");
-                    myMail.Subject = "TESTING - " + DateTime.Now + " SystemAudit Processing run completed successfully";
-                }
+                    myMail.Subject = "TESTING - " + DateTime.Now + " SystemAudit Processing run completed successfully";                 
+               
+                }             
+
+                myMail.IsBodyHtml = true;
 
                 string bd = "";
                 if (CandidatesList.Count() == 1)
@@ -1205,50 +1209,50 @@ namespace NewWinAudit
                     bd = "<h2> " + CandidatesList.Count() + " Audits were processed</h2>";
                 }
 
-               
-                bd = bd + "<table style = " + "' tr:nth-child(even) {background-color: #f2f2f2} '" +  " border = " + "1" + " border-radius= " + "10px" + " cellpadding = " + "6" + " cellspacing = " + "5" + "><tbody>";
-
-
-                foreach (SysAuditResults c in CandidatesList)
+                if (CandidatesList.Count() != 0)
                 {
 
-                 
-                    string reason = c.aFailedReason;
-                  
+                    bd = bd + "<table style = " + "' tr:nth-child(even) {background-color: #f2f2f2} '" + " border = " + "1" + " border-radius= " + "10px" + " cellpadding = " + "6" + " cellspacing = " + "5" + "><tbody>";
 
-                    if (c.aFailedReason != null)
+
+                    foreach (SysAuditResults c in CandidatesList)
                     {
-                        reason = " - " + c.aFailedReason;
-                    }
+                        string reason = c.aFailedReason;
 
-                    if (c.needsManualProcessing)
-                    {
-
-                        bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'33%'" + ">" + c.cEmail + "</td><td width=" + "'43%'" + ">" + c.aResult + reason + "</td></tr>";
-                        sendMail(c.cEmail, c.attachmentFilename, c.cName, isTESTING);
-                    }
-                    else
-                    {
-                        if(c.aResult == "Fail") {
-                            bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'43%'" + ">" + c.cEmail + "</td><td  width=" + "'43%'" + "><font color='red'>" + c.aResult + reason + "</font></td></tr>";
-                        }
-                        if(c.aResult == "Pass")
-                        {                        
-                            bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'28%'" + ">" + c.cEmail + "</td><td ' width=" + "'43%'" + "><font color='green'>" + c.aResult + reason + "</font></td></tr>";
-                        }
-
-                        if (c.aResult == "Pending")
+                        if (c.aFailedReason != null)
                         {
-                            bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'28%'" + ">" + c.cEmail + "</td><td  width=" + "'43%'" + "><font color='blue'>" + c.aResult + reason + "</font></td></tr>";
+                            reason = " - " + c.aFailedReason;
                         }
 
-                        sendMail(c.cEmail, c.attachmentFilename, c.cName, isTESTING);
+                        if (c.needsManualProcessing)
+                        {
+
+                            bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'33%'" + ">" + c.cEmail + "</td><td width=" + "'43%'" + ">" + c.aResult + reason + "</td></tr>";
+                            sendMail(c.cEmail, c.attachmentFilename, c.cName, isTESTING);
+                        }
+                        else
+                        {
+                            if (c.aResult == "Fail")
+                            {
+                                bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'43%'" + ">" + c.cEmail + "</td><td  width=" + "'43%'" + "><font color='red'>" + c.aResult + reason + "</font></td></tr>";
+                            }
+                            if (c.aResult == "Pass")
+                            {
+                                bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'28%'" + ">" + c.cEmail + "</td><td ' width=" + "'43%'" + "><font color='green'>" + c.aResult + reason + "</font></td></tr>";
+                            }
+
+                            if (c.aResult == "Pending")
+                            {
+                                bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'28%'" + ">" + c.cEmail + "</td><td  width=" + "'43%'" + "><font color='blue'>" + c.aResult + reason + "</font></td></tr>";
+                            }
+
+                            sendMail(c.cEmail, c.attachmentFilename, c.cName, isTESTING);
+                        }
+
                     }
 
+                    bd = bd + "</tbody></table>";
                 }
-
-                bd = bd + "</tbody></table>";
-
                 myMail.Body = Regex.Replace(bd, @"[^\u0000-\u007F]", " ");
                 mySmtpClient.Send(myMail);
 

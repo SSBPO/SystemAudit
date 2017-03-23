@@ -9,12 +9,9 @@ using Excel = Microsoft.Office.Interop.Excel;
 using Outlook = Microsoft.Office.Interop.Outlook;
 //using S22.Imap;
 using System.Reflection;
-using System.Net.Mail;
-using Microsoft.Vbe.Interop;
 using System.IO;
-using System.Diagnostics;
 using System.Threading;
-using System.Net;
+
 
 namespace StatesideBpo
 {
@@ -41,7 +38,7 @@ namespace StatesideBpo
 
             SystemAudit xxx_SysAudit = new SystemAudit();
             isTESTING = false;
-            //isTESTING = true;
+            isTESTING = true;
             int ProcessedEmails;
             int ProcessedManualEmails;
 
@@ -61,8 +58,7 @@ namespace StatesideBpo
 
                 if (CandidatesList.Count() > 0)
                 {
-                    createBitLeverImport(CandidatesList);
-                   
+                    createBitLeverImport(CandidatesList);                   
                     createFileImport(CandidatesList);
                 }
             }
@@ -135,9 +131,9 @@ namespace StatesideBpo
                         SysAuditXLWApp = new Excel.Application();
                         SysAuditWWorkBook = SysAuditXLWApp.Workbooks.Open(@"\\filesvr4\IT\WinAudit\SysAudit App\WinAuditPro.xltm"); // Open the SysAudit Excel template
                         SysAuditWWorkSheet = SysAuditWWorkBook.Worksheets[1] as Excel.Worksheet; // Set sheet 1 as the active sheet in Excel template
-                      //  SysAuditXLWApp.Visible = true;
+                       // SysAuditXLWApp.Visible = true;
 
-                       
+
                         SysAuditWWorkSheet.Cells[5, 2] = "Computer Name: ";
                         SysAuditWWorkSheet.Cells[6, 2] = "Current User: ";                      
 
@@ -319,12 +315,10 @@ namespace StatesideBpo
                 }
                 else
                 {
-
                     string s2 = "There are " + msgs.Count() + " SystemAudits to process.";
                     Console.SetCursorPosition((Console.WindowWidth - s2.Length) / 2, Console.CursorTop);
                     Console.WriteLine(s2);
                     Console.WriteLine();
-
                 }
 
                 string s3 = "Starting...";
@@ -345,17 +339,17 @@ namespace StatesideBpo
                     string s5 = "Processing {0} of {1}.";
                     Console.SetCursorPosition((Console.WindowWidth - s5.Length) / 2, Console.CursorTop);
                     Console.Write(s5, ProcessedEmails, msgs.Count());
-
-
+                    
                     if ((msg.Value.Body != "") && msg.Value != null)
                     {  
-                        string[] lines = stripHtml.Convert(msg.Value.Body).Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
+                        string[] lines = stripHtml.Convert(msg.Value.Body).Split(new string[] { "\r\n", "\n", "* " }, StringSplitOptions.None);
                         int i = 2;
                         List<String> line = lines.ToList();
 
                         SysAuditXLWApp = new Excel.Application();
                         SysAuditWWorkBook = SysAuditXLWApp.Workbooks.Open(@"\\filesvr4\IT\WinAudit\SysAudit App\WinAuditPro.xltm"); // Open the SysAudit Excel template
                         SysAuditWWorkSheet = SysAuditWWorkBook.Worksheets[1] as Excel.Worksheet; // Set sheet 1 as the active sheet in Excel template
+                        //SysAuditXLWApp.Visible = true;
 
                         foreach (string l in line.ToList()) //Foreach of the lines in the email
                         {
@@ -381,7 +375,7 @@ namespace StatesideBpo
                         }
 
 
-                        if (!SSBPOsysAuditResults.cCPU.Contains("given"))
+                        if (!SSBPOsysAuditResults.cCPU.Contains(" given"))
                         {
                             SysAuditXLWApp.Run("Sheet2.SaveAsC");  //Run SaveAsC macro on the Excel template to export results to pdf                                 // 
                         }
@@ -488,30 +482,25 @@ namespace StatesideBpo
         }
         private static void createFileImport(List<SysAuditResults> CandidatesList)
         {
+            
+            string path = @"\\filesvr4\IT\WinAudit\4BitLeverImport\AuditMaster.csv";
 
-
-            foreach (SysAuditResults r in CandidatesList)
+            // This text is added only once to the file.
+            if (!File.Exists(path))
             {
-
-                if (r.IsManual != true)
+                foreach (SysAuditResults r in CandidatesList)
                 {
-                    string line = "";
-                    string day = r.auditDate;     
-                    day = day.Replace("p.m.", "PM");
-
-                    //if (r.aResult == "Pending")
-                    //    line = "No";
-                    //else
-                    //{
-                    //    line = "Yes";
-                    //}
-
-                    line = day.Trim() + "," + r.cName + "," + r.cEmail + "," + r.aResultSummary + "," + r.aResult + "," + Environment.UserName + "," + r.aFailedReason + ", " + DateTime.Now;
-                    File.AppendAllText(@"\\filesvr4\IT\WinAudit\4BitLeverImport\AuditMaster.csv", line + Environment.NewLine);
-
+                    if (r.IsManual != true)
+                    {                        
+                        string line = Convert.ToDateTime(r.auditDate).ToString("g", System.Globalization.CultureInfo.CreateSpecificCulture("en-us")) + "," + r.cName + "," + r.cEmail + "," + r.aResultSummary + "," + r.aResult + "," + Environment.UserName + "," + r.aFailedReason + ", " + DateTime.Now;                       
+                        string createText = line.Replace('Â', ' ') + Environment.NewLine;
+                        File.AppendAllText(path, createText);
+                    }
                 }
 
             }
+
+      
 
         }
 
@@ -584,7 +573,7 @@ namespace StatesideBpo
                     sysAuditResults.cHost = l.ToString().Substring(15);
                 }
 
-                if (l.Contains("RAM"))
+                if (l.Contains(" RAM"))
                 {
                     sysAuditResults.cRAM = l.ToString().Substring(22);
                     string[] cRAMs = sysAuditResults.cRAM.Split('=');
@@ -603,70 +592,71 @@ namespace StatesideBpo
 
                 if (l.Contains("Network"))
                 {
-                    string[] uSpeed = l.Split('-');
-                    string[] up = uSpeed[1].ToString().Substring(16, 4).Split('.');
-                    string[] dp = l.ToString().Substring(34, 10).Replace("]", "").Split('.');
 
-                    sysAuditResults.cInternetDown = dp[0].Trim();
-                    sysAuditResults.cInternetUp = up[0].Trim();
-               
+                        string[] dp = null;
+                        string[] up = null;
+                        string[] uSpeed = l.Split('-');
 
-                    if (sysAuditResults.cInternetUp.Length > 1)
-                    {
-                        sysAuditResults.cInternetUp = up[0].Substring(0, 2);
-                    }
-                    else
-                    {
-                        sysAuditResults.cInternetUp = dp[0];
-                    }
+                        up = uSpeed[1].Split(':');
+                        sysAuditResults.cInternetUp = up[1].Trim().Replace("Mbps]","").Replace("Kbps]", "");
 
+                        dp = uSpeed[0].Split(':');
+                        sysAuditResults.cInternetDown = dp[2].Trim().Replace("Mbps]", "").Replace("Kbps]", "");
 
-                    if (sysAuditResults.cInternetDown.Length > 1)
-                    {
-                        sysAuditResults.cInternetDown = dp[0].Substring(0, 2);
-                    }else
-                    {
-                        sysAuditResults.cInternetDown = dp[0];
-                    }
-                    
-
-
-
-                    if (l.ToString().Trim().Contains("Kbps"))
-                    {
-                        if (Convert.ToUInt32(sysAuditResults.cInternetUp) < 1000)
+                        if (up[1].ToString().Trim().Contains("Kbps"))
                         {
-                            sysAuditResults.InternetUpResult = "Fail";
-                            sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Upload speed insufficient";
+                            if (Convert.ToUInt32(sysAuditResults.cInternetUp.Substring(0,1)) < 1000)
+                            {
+                                sysAuditResults.InternetUpResult = "Fail";
+                                sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Upload speed insufficient";
+                            }
+                            else
+                            {
+                                sysAuditResults.InternetUpResult = "Pass";
+                            }
                         }
                         else
                         {
-                            sysAuditResults.InternetUpResult = "Pass";
+                            if (Convert.ToUInt32(sysAuditResults.cInternetUp.Substring(0, 1)) < 1)
+                            {
+                                sysAuditResults.InternetUpResult = "Fail";
+                                sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Upload speed insufficient";
+                            }
+                            else
+                            {
+                                sysAuditResults.InternetUpResult = "Pass";
+                            }
                         }
-                    }
-                    else
-                    {
-                        if (Convert.ToUInt32(sysAuditResults.cInternetUp) < 1)//could be problems
+
+
+
+
+                        if (dp[1].ToString().Trim().Contains("Kbps"))
                         {
-                            sysAuditResults.InternetUpResult = "Fail";
-                            sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Upload speed insufficient";
+                            if (Convert.ToUInt32(sysAuditResults.cInternetDown) < 3000)
+                            {
+                                sysAuditResults.InternetDownResult = "Fail";
+                                sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Download speed insufficient";
+                            }
+                            else
+                            {
+                                sysAuditResults.InternetDownResult = "Pass";
+                            }
                         }
                         else
                         {
-                            sysAuditResults.InternetUpResult = "Pass";
+                            if (Convert.ToUInt32(sysAuditResults.cInternetDown) < 3)
+                            {
+                                sysAuditResults.InternetDownResult = "Fail";
+                                sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Download speed insufficient";
+                            }
+                            else
+                            {
+                                sysAuditResults.InternetDownResult = "Pass";
+                            }
                         }
-                    }
 
-                    
-                if (Convert.ToUInt32(sysAuditResults.cInternetDown) < 3)//could be problems
-                {
-                    sysAuditResults.InternetDownResult = "Fail";
-                    sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Download speed insufficient";
-                }
-                else
-                {
-                    sysAuditResults.InternetDownResult = "Pass";
-                }
+
             }
 
                 if (l.Contains("CPU"))
@@ -700,19 +690,6 @@ namespace StatesideBpo
                         sysAuditResults.aResult = "Pending";
                     }
                 }
-
-                
-            //}
-            //catch (System.Exception ex)
-            //{
-            //    throw new ApplicationException
-            //      ("Exception has occured: " + ex.Message);
-            //}
-
-            //if (!string.IsNullOrEmpty(sysAuditResults.aFailedReason))
-            //{
-            //    sysAuditResults.aFailedReason = sysAuditResults.aFailedReason.Remove(0, 1);
-            //}
 
             sysAuditResults.aResultSummary = "[OS = " + sysAuditResults.cOS + "] - " + sysAuditResults.cCPU + " - " + sysAuditResults.cRAM + " - " + sysAuditResults.cHDD + " - [Download Speed = " + sysAuditResults.cInternetDown + " Mbps] - [Upload Speed = " + sysAuditResults.cInternetUp + " Mbps]";
             return sysAuditResults;
