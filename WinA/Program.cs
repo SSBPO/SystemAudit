@@ -38,7 +38,7 @@ namespace StatesideBpo
 
             SystemAudit xxx_SysAudit = new SystemAudit();
             isTESTING = false;
-            isTESTING = true;
+            //isTESTING = true;
             int ProcessedEmails;
             int ProcessedManualEmails;
 
@@ -58,7 +58,7 @@ namespace StatesideBpo
 
                 if (CandidatesList.Count() > 0)
                 {
-                    createBitLeverImport(CandidatesList);                   
+                   // createBitLeverImport(CandidatesList);                   
                     createFileImport(CandidatesList);
                 }
             }
@@ -478,30 +478,26 @@ namespace StatesideBpo
             SysAuditXLWApp2.Quit();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            
+
         }
         private static void createFileImport(List<SysAuditResults> CandidatesList)
         {
+                string path = @"\\filesvr4\IT\WinAudit\4BitLeverImport\AuditMasterLIFE.csv";
             
-            string path = @"\\filesvr4\IT\WinAudit\4BitLeverImport\AuditMaster.csv";
-
-            // This text is added only once to the file.
-            if (!File.Exists(path))
-            {
-                foreach (SysAuditResults r in CandidatesList)
+                if (File.Exists(path))
                 {
-                    if (r.IsManual != true)
-                    {                        
-                        string line = Convert.ToDateTime(r.auditDate).ToString("g", System.Globalization.CultureInfo.CreateSpecificCulture("en-us")) + "," + r.cName + "," + r.cEmail + "," + r.aResultSummary + "," + r.aResult + "," + Environment.UserName + "," + r.aFailedReason + ", " + DateTime.Now;                       
-                        string createText = line.Replace('Â', ' ') + Environment.NewLine;
-                        File.AppendAllText(path, createText);
+                    foreach (SysAuditResults c in CandidatesList)
+                    {
+                        if (c.IsManual != true)
+                        {
+
+                            string line = Convert.ToDateTime(c.auditDate).ToString("g", System.Globalization.CultureInfo.CreateSpecificCulture("en-us")).Trim() + "," + c.cName.Trim() + "," + c.cEmail.Trim() + "," + c.aResultSummary.Trim() + "," + c.aResult.Trim() + "," + Environment.UserName.Trim() + "," + c.resultSent + ", " + c.aFailedReason + ", " + DateTime.Now;
+                            string createText = line; 
+                            File.AppendAllText(path, createText + Environment.NewLine, Encoding.UTF32);
+                        }
                     }
+
                 }
-
-            }
-
-      
-
         }
 
         private static SysAuditResults getResultsObject(SysAuditResults sysAuditResults, string l)
@@ -645,6 +641,13 @@ namespace StatesideBpo
                         }
                         else
                         {
+
+                            if (sysAuditResults.cInternetDown.Contains("."))
+                            {
+                                string [] dIp = sysAuditResults.cInternetDown.Split('.');
+                                sysAuditResults.cInternetDown = dIp[0];
+                            }
+
                             if (Convert.ToUInt32(sysAuditResults.cInternetDown) < 3)
                             {
                                 sysAuditResults.InternetDownResult = "Fail";
@@ -715,12 +718,14 @@ namespace StatesideBpo
             return messages;
         }
 
+
         struct SysAuditResults
         {
 
             private bool _needsmanualprocessing;
             private bool _isManual;
 
+            private string _resultSent;
             private string _afailedreason;
             private string _date;
             private string _name;
@@ -734,6 +739,7 @@ namespace StatesideBpo
             private string _internetDown;
             private string _results;
             private string _resultssummary;
+            private string _attachmentfilename;
 
             private string _cpuresult;
             private string _osresults;
@@ -757,6 +763,18 @@ namespace StatesideBpo
                 }
             }
 
+            public string attachmentFilename
+            {
+                get
+                {
+                    return _attachmentfilename;
+                }
+                set
+                {
+
+                    _attachmentfilename = value;
+                }
+            }
             public string aFailedReason
             {
                 get
@@ -874,9 +892,28 @@ namespace StatesideBpo
                 set
                 {
 
-                   
-                        _internetUp = value;
-                  
+                    string[] tf = value.Split(' ');
+                    int idx = 0;
+
+                    if (tf[0] == "" | tf[0] == ":" | tf[0] == "=")
+                        idx = 1;
+                    if (tf[idx].ToString().Length > 2)
+                    {
+                        _internetUp = tf[idx].ToString().Substring(0, 3).Replace(".", "").Replace(";", "");
+                    }
+                    if (tf[idx].ToString().Length == 2)
+                    {
+                        _internetUp = tf[idx].ToString().Replace(".", "").Replace(";", "");
+                    }
+                    if (tf[idx].ToString().Length == 1)
+                    {
+                        _internetUp = tf[idx].ToString();
+                    }
+                    if (tf[idx].ToString().Length > 2)
+                    {
+                        _internetUp = tf[idx].ToString().Substring(0, 3).Replace(".", "").Replace(";", "");
+
+                    }
                 }
             }
             public string cInternetDown
@@ -893,13 +930,8 @@ namespace StatesideBpo
                     if (tf[0] == "" | tf[0] == ":")
                         idx = 1;
 
-                    if (tf[idx].Length > 1) { 
-                    _internetDown = tf[idx].ToString().Substring(0, 2).Replace(".", "");
-                    }
-                    else
-                    {
-                        _internetDown = tf[idx].ToString();
-                    }
+                    _internetDown = tf[idx].ToString();
+
                 }
             }
             public string aResult
@@ -1013,9 +1045,22 @@ namespace StatesideBpo
                     _isManual = value;
                 }
             }
-           
-        }
 
+
+            public string resultSent
+            {
+                get
+                {
+                    return _resultSent;
+                }
+                set
+                {
+
+                    _resultSent = value;
+                }
+            }
+
+        }
         public static Outlook.Account getAccountForEmailAddress(Outlook.Application application, string smtpAddress)
         {
             // Loop over the Accounts collection of the current Outlook session. 
@@ -1563,7 +1608,6 @@ namespace StatesideBpo
 
                 oWB.Close(true, Missing.Value, Missing.Value);
             }
-
             public void writeExcelFile()
             {
                 Excel.Application oXL = new Excel.Application();

@@ -19,7 +19,6 @@ namespace NewWinAudit
     class SystemAudit
     {
         public static bool isTESTING { get; private set; }
-
         public int ProcessedEmails = 0;
         public int ProcessedManualEmails = 0;
 
@@ -46,49 +45,52 @@ namespace NewWinAudit
                 string s = "Checking SystemAudits mailbox...";
                 Console.SetCursorPosition((Console.WindowWidth - s.Length) / 2, Console.CursorTop);
                 Console.WriteLine(s);
-               
+                Console.WriteLine("");
+
                 // Check mailbox and get any messages not seen and sent by systemaudit@bit-lever.com
                 IEnumerable<uint> uids = imapClient.Search(S22.Imap.SearchCondition.Unseen().And(S22.Imap.SearchCondition.From("systemaudit@bit-lever.com")));
-                IEnumerable<System.Net.Mail.MailMessage> messages = imapClient.GetMessages(uids);                
-                xxx_SysAudit.ProcessedEmails = processNormalAudits(CandidatesList, messages);
+                IEnumerable<System.Net.Mail.MailMessage> messages = imapClient.GetMessages(uids);
 
-                string s1 = "There are " + xxx_SysAudit.ProcessedEmails + " new emails to process...";
-                Console.SetCursorPosition((Console.WindowWidth - s1.Length) / 2, Console.CursorTop);
-                Console.WriteLine(s1);            
-
+               
                 IEnumerable<uint> manualuids = imapClient.Search(S22.Imap.SearchCondition.Unseen().And(S22.Imap.SearchCondition.From("no-reply@bit-lever.com")));
                 IEnumerable<System.Net.Mail.MailMessage> manualmessages = imapClient.GetMessages(manualuids);
-                xxx_SysAudit.ProcessedManualEmails = proccessManualAudits(CandidatesList, manualmessages);
+                                
+                Thread.Sleep(2000);
 
-                string s2 = "There are " + xxx_SysAudit.ProcessedManualEmails + " manual emails to process...";
+                string s2 = "New Audits to process:  " + messages.Count();   
                 Console.SetCursorPosition((Console.WindowWidth - s2.Length) / 2, Console.CursorTop);
-                Console.WriteLine(s2);
+                Console.WriteLine(s2);                
+                xxx_SysAudit.ProcessedEmails = processNormalAudits(CandidatesList, messages);
+                Thread.Sleep(2000);
 
-                if (CandidatesList.Count() > 0)
-                {
-                    createBitLeverImport(CandidatesList);
-                    createFileImport(CandidatesList);
-                }
+                Console.WriteLine("");
+                Console.WriteLine("");
 
+                string sx = "Manual Audits to process:  " + manualmessages.Count();    
+                Console.SetCursorPosition((Console.WindowWidth - sx.Length) / 2, Console.CursorTop);
+                Console.WriteLine(sx);
+                xxx_SysAudit.ProcessedManualEmails = proccessManualAudits(CandidatesList, manualmessages);
+                Thread.Sleep(2000);              
 
                 sendCompletionNotification(CandidatesList);
 
                 if (CandidatesList.Count() > 0)
                 {
-                    createBitLeverImport(CandidatesList);
-
+                   // createBitLeverImport(CandidatesList);
                     createFileImport(CandidatesList);
                 }
             }
 
-            string s5 = "Processing is completed. There are not more emails to processed. Good bye!";
             Console.WriteLine("");
-            Console.SetCursorPosition((Console.WindowWidth - s5.Length) / 2, Console.CursorTop);
-            
+            Console.WriteLine("");
+            Console.WriteLine("");
+            string s5 = "Processing completed. " + xxx_SysAudit.ProcessedEmails + " New Audits and " + xxx_SysAudit.ProcessedManualEmails + " Manual were processed. Good bye!";
+            Console.WriteLine("");
+            Console.SetCursorPosition((Console.WindowWidth - s5.Length) / 2, Console.CursorTop);            
             Console.WriteLine(s5);
             Console.WriteLine("");
             Console.WriteLine("################################################################################");
-            Thread.Sleep(5000);
+            Thread.Sleep(15000);
 
         }
  
@@ -98,34 +100,18 @@ namespace NewWinAudit
 
             if (messages.Count() != 0)
             {
-                //string welcomeMsg = "";
-                //// If there are new unseen messages 
-                //if (messages.Count() == 1)
-                //{
-                //    welcomeMsg = "There is " + messages.Count() + " SystemAudit to process.";
-                //}
-                //if (messages.Count() >= 1)
-                //{
-                //    welcomeMsg = "There are " + messages.Count() + " SystemAudits to process.";
-                //}               
-                //Console.WriteLine();             
-
-                string s4 = "Starting...";
+                string s4 = "Processing new Audits...";               
                 Console.SetCursorPosition((Console.WindowWidth - s4.Length) / 2, Console.CursorTop);
                 Console.WriteLine(s4);
-             
-
-                // For each message
-
+                Thread.Sleep(2000);
+                
                 foreach (System.Net.Mail.MailMessage msg in messages)
                 {
                     ProcessedEmails = ProcessedEmails + 1;
-                    string s5 = "Processing {0} of {1}.";
-                    Console.SetCursorPosition((Console.WindowWidth - s5.Length) / 2, Console.CursorTop);
-                    Console.Write(s5, ProcessedEmails, messages.Count());
-
-                   // Console.WriteLine("");
-
+                    string sz = "Processing {0} of {1}.";
+                    Console.SetCursorPosition((Console.WindowWidth - sz.Length) / 2, Console.CursorTop);
+                    Console.Write(sz, ProcessedEmails, messages.Count());
+                    
                     //Load the WinAudit workbook
                     string fileName = @"\\filesvr4\IT\WinAudit\SysAudit App\WinAuditPro.xlsm";
                     var ef = ExcelFile.Load(fileName);
@@ -137,8 +123,7 @@ namespace NewWinAudit
                     // If message body is not empty 
                     if (msg.Body != "")
                     {
-
-                        //Strip Html from emal and split into 14 lines  
+                        //Strip Html from emal and split into lines  
                         string[] line = stripHtml.Convert(msg.Body).Split(new string[] { "\r\n", "\n","* " }, StringSplitOptions.None);
 
                         //Foreach line in the email
@@ -154,18 +139,8 @@ namespace NewWinAudit
 
                     SSBPOsysAuditResults = getAuditStatus(SSBPOsysAuditResults);
                     generatePdf(ref ef, ref SSBPOsysAuditResults);                    
-                    CandidatesList.Add(SSBPOsysAuditResults);
-          
+                    CandidatesList.Add(SSBPOsysAuditResults);          
                 }
-
-
-            }
-            else
-            {
-               
-                //string s4 = "There is nothing to process. Good bye!";
-                //Console.SetCursorPosition((Console.WindowWidth - s4.Length) / 2, Console.CursorTop);
-                //Console.WriteLine(s4);
             }
 
             return ProcessedEmails;
@@ -177,8 +152,7 @@ namespace NewWinAudit
 
             if (Manualmsgs.Count() != 0)
             {
-                Console.WriteLine("");
-                string sx = "Starting...";
+                string sx = "Processing manual Audits...";
                 Console.SetCursorPosition((Console.WindowWidth - sx.Length) / 2, Console.CursorTop);
                 Console.WriteLine(sx);
 
@@ -228,21 +202,19 @@ namespace NewWinAudit
 
                             if (l.ToString().Contains("Notes"))
                             {
-                                string[] values = l.Split('-');                              
+                                string[] values = l.Split('-');    
+                                                          
                                 //Write the line value to the active sheet in Excel template
                                 string trn = "";
                                 string rsn = "";
                                 string sRamc = "";
-
                                 string hdds = "";
                                 string hddsp = "";
                                 string hddas = "";
                                 string shdd = "";
-
                                 string cpus = "";
                                 string cpun = "";
                                 string sCpuc = "";
-
                                 string manualUpSpeed = "";
                                 string manualDownSpeed = "";
                                 string internetSpeed = "";
@@ -307,37 +279,9 @@ namespace NewWinAudit
                                         }
                                  }//each
                             }
-                        }
-
-                        if (SSBPOsysAuditResults.OSaResult == "Pass" & SSBPOsysAuditResults.CPUaResult == "Pass" & SSBPOsysAuditResults.RAMaResult == "Pass" & SSBPOsysAuditResults.InternetUpResult == "Pass" & SSBPOsysAuditResults.InternetDownResult == "Pass" & SSBPOsysAuditResults.HDDaResult == "Pass")
-                        {
-                            SSBPOsysAuditResults.aResult = "Pass";
-                        }
-                        else if (SSBPOsysAuditResults.aResult == "Pending")
-                        {
-                            SSBPOsysAuditResults.aResult = "Pending";
-                        }
-                        else
-                        {
-                            SSBPOsysAuditResults.aResult = "Fail";
-                        }
-
-                        if (SSBPOsysAuditResults.cCPU.Contains("given"))
-                        {
-                            SSBPOsysAuditResults.aFailedReason = "**Needs manual processing**";
-                        }
-
-                        if (!string.IsNullOrEmpty(SSBPOsysAuditResults.aFailedReason))
-                        {
-                            SSBPOsysAuditResults.aFailedReason = SSBPOsysAuditResults.aFailedReason.Substring(2);
-                        }
-
-                        SSBPOsysAuditResults = getAuditStatus(SSBPOsysAuditResults);
-                        generatePdf(ref ef, ref SSBPOsysAuditResults);
-                        CandidatesList.Add(SSBPOsysAuditResults);
+                        }                       
                     }
-                }
-      
+                }      
             }
 
             return ProcesseManualdEmails;
@@ -378,11 +322,11 @@ namespace NewWinAudit
             worksheet.Cells["C18"].Value = SSBPOsysAuditResults.cInternetUp.Trim() + " Mbps";
             worksheet.Cells["C19"].Value = SSBPOsysAuditResults.cInternetDown.Trim() + " Mbps";
 
-            if (Convert.ToInt32(SSBPOsysAuditResults.cInternetUp) > 99)
+            if (Convert.ToDecimal(SSBPOsysAuditResults.cInternetUp) > 99)
             {
                 worksheet.Cells["C18"].Value = SSBPOsysAuditResults.cInternetUp.Trim() + " Kbps";
             }
-            if (Convert.ToInt32(SSBPOsysAuditResults.cInternetDown) > 99)
+            if (Convert.ToDecimal(SSBPOsysAuditResults.cInternetDown) > 99)
             {
                 worksheet.Cells["C19"].Value = SSBPOsysAuditResults.cInternetDown.Trim() + " Kbps";
             }
@@ -458,7 +402,7 @@ namespace NewWinAudit
 
             if(SSBPOsysAuditResults.needsManualProcessing == false) {
 
-                if (isTESTING)
+                if (isTESTING == true)
                 {
                     ef.Save(@"\\Filesvr4\it\WinAudit\Test - Results_Archive\TESTING - " + SSBPOsysAuditResults.cName + " SystemAudit Results.pdf");
                     SSBPOsysAuditResults.attachmentFilename = @"\\Filesvr4\it\WinAudit\Test - Results_Archive\TESTING - " + SSBPOsysAuditResults.cName + " SystemAudit Results.pdf";
@@ -479,14 +423,17 @@ namespace NewWinAudit
             if (SSBPOsysAuditResults.OSaResult == "Pass" & SSBPOsysAuditResults.CPUaResult == "Pass" & SSBPOsysAuditResults.RAMaResult == "Pass" & SSBPOsysAuditResults.InternetUpResult == "Pass" & SSBPOsysAuditResults.InternetDownResult == "Pass" & SSBPOsysAuditResults.HDDaResult == "Pass")
             {
                 SSBPOsysAuditResults.aResult = "Pass";
+                SSBPOsysAuditResults.resultSent = "Yes";
             }
             else if (SSBPOsysAuditResults.aResult == "Pending")
             {
                 SSBPOsysAuditResults.aResult = "Pending";
+                SSBPOsysAuditResults.resultSent = "No";
             }
             else
             {
                 SSBPOsysAuditResults.aResult = "Fail";
+                SSBPOsysAuditResults.resultSent = "Yes";
             }
 
             if (SSBPOsysAuditResults.cCPU.Contains("given"))
@@ -555,34 +502,27 @@ namespace NewWinAudit
            
 
         }
+
+
         private static void createFileImport(List<SysAuditResults> CandidatesList)
         {
-
-
-            foreach (SysAuditResults r in CandidatesList)
-            {
-
-                if (r.IsManual != true)
+                string path = @"\\filesvr4\it\WinAudit\4BitLeverImport\AuditMasterLIVE.csv";
+            
+                if (File.Exists(path))
                 {
-                    string line = "";
-                    string day = r.auditDate;
-                    day = day.Replace("p.m.", "PM");
-
-                    //if (r.aResult == "Pending")
-                    //    line = "No";
-                    //else
-                    //{
-                    //    line = "Yes";
-                    //}
-                    
-                    line = Convert.ToDateTime(day).ToString("g", CultureInfo.CreateSpecificCulture("en-us")) + "," + r.cName.TrimEnd().Replace("Â","") + ", " + r.cEmail.TrimEnd() + "," + r.aResultSummary.TrimEnd() + "," + r.aResult.TrimEnd() + "," + Environment.UserName + "," + r.aFailedReason + ", " + DateTime.Now;
-                    File.AppendAllText(@"\\filesvr4\IT\WinAudit\4BitLeverImport\AuditMaster.csv", line + Environment.NewLine);
+                    foreach (SysAuditResults c in CandidatesList)
+                    {
+                        if (c.IsManual != true)
+                        {
+                            string line = Convert.ToDateTime(c.auditDate).ToString("g", System.Globalization.CultureInfo.CreateSpecificCulture("en-us")) + "," + c.cName.Replace('Â', ' ') + "," + c.cEmail + "," + c.aResultSummary + "," + c.aResult + "," + Environment.UserName + "," + c.resultSent + ", " + c.aFailedReason + ", " + DateTime.Now;
+                            string createText = line; 
+                            File.AppendAllText(path, createText + Environment.NewLine, Encoding.UTF32);
+                        }
+                    }
 
                 }
-
-            }
-
         }
+
 
         private static SysAuditResults getResultsObject(SysAuditResults sysAuditResults, string l)
         {
@@ -648,7 +588,7 @@ namespace NewWinAudit
                 sysAuditResults.cHost = l.ToString().Substring(15);
             }
 
-            if (l.Contains("RAM"))
+            if (l.Contains(" RAM"))
             {
                 sysAuditResults.cRAM = l.ToString().Substring(22);
                 string[] cRAMs = sysAuditResults.cRAM.Split('=');
@@ -667,40 +607,23 @@ namespace NewWinAudit
 
             if (l.Contains("Network"))
             {
+
+                string[] dp = null;
+                string[] up = null;
                 string[] uSpeed = l.Split('-');
 
-                string[] up = uSpeed[1].ToString().Substring(16, 5).Split('.');
-                string[] dp = uSpeed[0].ToString().Substring(34,5).Replace("]", "").Split('.');
+                up = uSpeed[1].Split(':');
+                sysAuditResults.cInternetUp = up[1].Trim().Replace("Mbps]", "").Replace("Kbps]", "");
 
-                sysAuditResults.cInternetDown = dp[0];
-                sysAuditResults.cInternetUp = up[0];
+                dp = uSpeed[0].Split(':');
+                sysAuditResults.cInternetDown = dp[2].Trim().Replace("Mbps]", "").Replace("Kbps]", "");
 
-                if (sysAuditResults.cInternetUp.Length > 2)
+                if (up[1].ToString().Trim().Contains("Kbps"))
                 {
-                    sysAuditResults.cInternetUp = up[0].Substring(0, 3);
-                }
-               
-                else
-                {
-                    sysAuditResults.cInternetUp = up[0].Substring(0,1);
-                }
-
-
-                if (sysAuditResults.cInternetDown.Length > 1)
-                {
-                    sysAuditResults.cInternetDown = dp[0].Substring(0, 2);
-                }
-                else
-                {
-                    sysAuditResults.cInternetDown = dp[0];
-                }
-
-                if (l.ToString().Trim().Contains("Kbps"))
-                {
-                    if (Convert.ToUInt32(sysAuditResults.cInternetUp) < 1000)
+                    if (Convert.ToUInt32(sysAuditResults.cInternetUp.Substring(0, 1)) < 1000)
                     {
                         sysAuditResults.InternetUpResult = "Fail";
-                        sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + "/ Upload speed insufficient";
+                        sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Upload speed insufficient";
                     }
                     else
                     {
@@ -709,10 +632,10 @@ namespace NewWinAudit
                 }
                 else
                 {
-                    if (Convert.ToUInt32(sysAuditResults.cInternetUp) < 1)//could be problems
+                    if (Convert.ToUInt32(sysAuditResults.cInternetUp.Substring(0, 1)) < 1)
                     {
                         sysAuditResults.InternetUpResult = "Fail";
-                        sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + "/ Upload speed insufficient";
+                        sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Upload speed insufficient";
                     }
                     else
                     {
@@ -721,15 +644,41 @@ namespace NewWinAudit
                 }
 
 
-                if (Convert.ToUInt32(sysAuditResults.cInternetDown) < 3)//could be problems
+
+
+                if (dp[1].ToString().Trim().Contains("Kbps"))
                 {
-                    sysAuditResults.InternetDownResult = "Fail";
-                    sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + "/ Download speed insufficient";
+                    if (Convert.ToUInt32(sysAuditResults.cInternetDown) < 3000)
+                    {
+                        sysAuditResults.InternetDownResult = "Fail";
+                        sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Download speed insufficient";
+                    }
+                    else
+                    {
+                        sysAuditResults.InternetDownResult = "Pass";
+                    }
                 }
                 else
                 {
-                    sysAuditResults.InternetDownResult = "Pass";
+
+                    if (sysAuditResults.cInternetDown.Contains("."))
+                    {
+                        string[] dIp = sysAuditResults.cInternetDown.Split('.');
+                        sysAuditResults.cInternetDown = dIp[0];
+                    }
+
+                    if (Convert.ToUInt32(sysAuditResults.cInternetDown) < 3)
+                    {
+                        sysAuditResults.InternetDownResult = "Fail";
+                        sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + ", Download speed insufficient";
+                    }
+                    else
+                    {
+                        sysAuditResults.InternetDownResult = "Pass";
+                    }
                 }
+
+
             }
 
             if (l.Contains("CPU"))
@@ -775,6 +724,7 @@ namespace NewWinAudit
             private bool _needsmanualprocessing;
             private bool _isManual;
 
+            private string _resultSent;
             private string _afailedreason;
             private string _date;
             private string _name;
@@ -943,24 +893,25 @@ namespace NewWinAudit
 
                     string[] tf = value.Split(' ');
                     int idx = 0;
+                    _internetUp = tf[idx].ToString();
+                    //if (tf[0] == "" | tf[0] == ":" | tf[0] == "=")
+                    //    idx = 1;
+                    //if(tf[idx].ToString().Length > 2) { 
+                    //    _internetUp = tf[idx].ToString().Substring(0, 3).Replace(".", "").Replace(";", "");
+                    //}
+                    //if (tf[idx].ToString().Length == 2)
+                    //{
+                    //    _internetUp = tf[idx].ToString().Replace(".", "").Replace(";", "");
+                    //}
+                    //if (tf[idx].ToString().Length == 1) {
+                    //    _internetUp = tf[idx].ToString();
+                    //}
+                    //if (tf[idx].ToString().Length > 2)
+                    //{
+                    //    _internetUp = tf[idx].ToString().Substring(0, 3).Replace(".", "").Replace(";", "");
 
-                    if (tf[0] == "" | tf[0] == ":" | tf[0] == "=")
-                        idx = 1;
-                    if(tf[idx].ToString().Length > 2) { 
-                        _internetUp = tf[idx].ToString().Substring(0, 3).Replace(".", "").Replace(";", "");
-                    }
-                    if (tf[idx].ToString().Length == 2)
-                    {
-                        _internetUp = tf[idx].ToString().Replace(".", "").Replace(";", "");
-                    }
-                    if (tf[idx].ToString().Length == 1) {
-                        _internetUp = tf[idx].ToString();
-                    }
-                    if (tf[idx].ToString().Length > 2)
-                    {
-                        _internetUp = tf[idx].ToString().Substring(0, 3).Replace(".", "").Replace(";", "");
 
-                    }
+               
                 }
             }
             public string cInternetDown
@@ -1093,8 +1044,22 @@ namespace NewWinAudit
                 }
             }
 
+
+            public string resultSent
+            {
+                get
+                {
+                    return _resultSent;
+                }
+                set
+                {
+
+                    _resultSent = value;
+                }
+            }
+
         }
-        public static void sendMail(string recipient, string attachmentFilename, string cadidateName, bool isTESTING)
+        public static void sendMail(string recipient, string attachmentFilename, string cadidateName)
         {
             try
             {
@@ -1110,11 +1075,11 @@ namespace NewWinAudit
                     
                     MailAddress from = new MailAddress("notify@statesidebpo.com");
                     MailAddress to = new MailAddress(recipient);
-                    MailAddress cc = new MailAddress("brodriguez@statesidebpo.com");
+                    MailAddress cc = new MailAddress("recruiters@statesidebpo.com");
 
-                    if (isTESTING)
+                    if (isTESTING == true)
                     {
-                        to = new MailAddress("brodriguez@statesidebpo.com");
+                        to = new MailAddress("brodriguez@statesidebpo.com");                       
                     }
 
                     MailMessage myMail = new MailMessage(from, to);
@@ -1122,7 +1087,7 @@ namespace NewWinAudit
                     myMail.Subject = "System audit results for " + cadidateName;
                     myMail.CC.Add(cc);
 
-                    if (isTESTING)
+                    if (isTESTING == true)
                     {
                         myMail.Subject = "TESTING - System audit results for " + cadidateName;
                     }
@@ -1132,11 +1097,10 @@ namespace NewWinAudit
 
                     Attachment inlineStatetSideLogo = new Attachment(@"\\filesvr4\IT\WinAudit\SysAudit App\StatesideLogo.png");
                     Attachment inlineBitLeverLogo = new Attachment(@"\\filesvr4\IT\WinAudit\SysAudit App\Bit-LeverLogo.png");
-
-                    Attachment SysAuditResults = new Attachment(@"\\Filesvr4\it\WinAudit\\Test - Results_Archive\TESTING - " + cadidateName + " SystemAudit Results.pdf");
+                    Attachment SysAuditResults =    new Attachment(@"\\Filesvr4\IT\WinAudit\Results_Archive\" + cadidateName + " SystemAudit Results.pdf");
                     
 
-                    if (!isTESTING)
+                    if (isTESTING == true)
                     {
                         SysAuditResults = new Attachment(@"\\Filesvr4\it\WinAudit\Results_Archive\" + "TESTING - " + cadidateName + " SystemAudit Results.pdf");
                     }
@@ -1186,7 +1150,7 @@ namespace NewWinAudit
 
                 // add from,to mailaddresses
                 MailAddress from = new MailAddress("notify@statesidebpo.com");
-                MailAddress to = new MailAddress("brodriguez@statesidebpo.com"); //to = new MailAddress("helpdesk@statesidebpo.com");
+                MailAddress to = new MailAddress("helpdesk@statesidebpo.com"); //to = new MailAddress("brodriguez@statesidebpo.com"); //
                 MailMessage myMail = new MailMessage(from, to);
                 myMail.Subject = DateTime.Now + " SystemAudit Processing run completed successfully";
 
@@ -1226,9 +1190,8 @@ namespace NewWinAudit
 
                         if (c.needsManualProcessing)
                         {
-
                             bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'33%'" + ">" + c.cEmail + "</td><td width=" + "'43%'" + ">" + c.aResult + reason + "</td></tr>";
-                            sendMail(c.cEmail, c.attachmentFilename, c.cName, isTESTING);
+                            sendMail(c.cEmail, c.attachmentFilename, c.cName);
                         }
                         else
                         {
@@ -1246,7 +1209,7 @@ namespace NewWinAudit
                                 bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'28%'" + ">" + c.cEmail + "</td><td  width=" + "'43%'" + "><font color='blue'>" + c.aResult + reason + "</font></td></tr>";
                             }
 
-                            sendMail(c.cEmail, c.attachmentFilename, c.cName, isTESTING);
+                            sendMail(c.cEmail, c.attachmentFilename, c.cName);
                         }
 
                     }
