@@ -13,6 +13,8 @@ using System.IO;
 using System.Net.Mime;
 using System.Threading;
 using System.Globalization;
+using System.Data.Odbc;
+using System.Data;
 
 namespace PRrequests
 {
@@ -26,72 +28,84 @@ namespace PRrequests
         {
             string excelLicense = "EQU2-1K6F-UZPP-4MOX";
             SpreadsheetInfo.SetLicense(excelLicense);
+
+            //isTESTING = false;
             isTESTING = true;
 
             Console.WriteLine("");
             Console.WriteLine("");
             Console.WriteLine("################################################################################");
-            Console.WriteLine("###############################   OrkinPR   ####################################");
+            Console.WriteLine("#####################     OrkinPR WinAuditPro ver.4   ##########################");
             Console.WriteLine("################################################################################");
             Console.WriteLine();
 
-            // Declare app instance / list to hold all sysaudits 
-            OrkinPR xxx_SysAudit = new OrkinPR();
-            List<SysAuditResults> CandidatesList = new List<SysAuditResults>();
-
-
-            using (S22.Imap.ImapClient imapClient = new S22.Imap.ImapClient("secure.emailsrvr.com", 993, "systemaudit@statesidebpo.com", "G4d5fG34!df!!2ew", AuthMethod.Login, true))
+            try
             {
-                string s = "Checking SystemAudits mailbox...";
-                Console.SetCursorPosition((Console.WindowWidth - s.Length) / 2, Console.CursorTop);
-                Console.WriteLine(s);
-                Console.WriteLine("");
-
-                // Check mailbox and get any messages not seen and sent by systemaudit@bit-lever.com
-                IEnumerable<uint> uids = imapClient.Search(S22.Imap.SearchCondition.Unseen().And(S22.Imap.SearchCondition.From("brodriguez@statesidebpo.com")));
-                IEnumerable<System.Net.Mail.MailMessage> messages = imapClient.GetMessages(uids);
+                // Declare app instance / list to hold all sysaudits 
+                OrkinPR xxx_SysAudit = new OrkinPR();
+                List<SysAuditResults> CandidatesList = new List<SysAuditResults>();
 
 
-                IEnumerable<uint> manualuids = imapClient.Search(S22.Imap.SearchCondition.Unseen().And(S22.Imap.SearchCondition.From("no-reply@bit-lever.com")));
-                IEnumerable<System.Net.Mail.MailMessage> manualmessages = imapClient.GetMessages(manualuids);
-
-                Thread.Sleep(2000);
-
-                string s2 = "New Audits to process:  " + messages.Count();
-                Console.SetCursorPosition((Console.WindowWidth - s2.Length) / 2, Console.CursorTop);
-                Console.WriteLine(s2);
-                xxx_SysAudit.ProcessedEmails = processNormalAudits(CandidatesList, messages);
-                Thread.Sleep(2000);
-
-                Console.WriteLine("");
-                Console.WriteLine("");
-
-                string sx = "Manual Audits to process:  " + manualmessages.Count();
-                Console.SetCursorPosition((Console.WindowWidth - sx.Length) / 2, Console.CursorTop);
-                Console.WriteLine(sx);
-                xxx_SysAudit.ProcessedManualEmails = proccessManualAudits(CandidatesList, manualmessages);
-                Thread.Sleep(2000);
-
-                sendCompletionNotification(CandidatesList);
-
-                if (CandidatesList.Count() > 0)
+                using (S22.Imap.ImapClient imapClient = new S22.Imap.ImapClient("secure.emailsrvr.com", 993, "systemaudit@statesidebpo.com", "G4xxsfsdf$$$-fsdfxG3ffsdafsdfa4!df!!2eX", AuthMethod.Login, true))
                 {
-                    // createBitLeverImport(CandidatesList);
-                    createFileImport(CandidatesList);
+                    string s = "Checking SystemAudits mailbox...";
+                    Console.SetCursorPosition((Console.WindowWidth - s.Length) / 2, Console.CursorTop);
+                    Console.WriteLine(s);
+                    Console.WriteLine("");
+
+                    // Check mailbox and get any messages not seen and sent by systemaudit@bit-lever.com
+                    IEnumerable<uint> uids = imapClient.Search(S22.Imap.SearchCondition.Unseen().And(S22.Imap.SearchCondition.From("systemaudit@bit-lever.com")));
+                    IEnumerable<System.Net.Mail.MailMessage> messages = imapClient.GetMessages(uids);
+
+
+                    IEnumerable<uint> manualuids = imapClient.Search(S22.Imap.SearchCondition.Unseen().And(S22.Imap.SearchCondition.From("no-reply@bit-lever.com")));
+                    IEnumerable<System.Net.Mail.MailMessage> manualmessages = imapClient.GetMessages(manualuids);
+
+                    Thread.Sleep(1000);
+
+                    string s2 = "New Audits to process:  " + messages.Count();
+                    Console.SetCursorPosition((Console.WindowWidth - s2.Length) / 2, Console.CursorTop);
+                    Console.WriteLine(s2);
+                    xxx_SysAudit.ProcessedEmails = processNormalAudits(CandidatesList, messages);
+                    Thread.Sleep(1000);
+
+                    Console.WriteLine("");
+                    Console.WriteLine("");
+
+                    string sx = "Manual Audits to process:  " + manualmessages.Count();
+                    Console.SetCursorPosition((Console.WindowWidth - sx.Length) / 2, Console.CursorTop);
+                    Console.WriteLine(sx);
+                    xxx_SysAudit.ProcessedManualEmails = proccessManualAudits(CandidatesList, manualmessages);
+                    Thread.Sleep(1000);
+
+                    sendCompletionNotification(CandidatesList);
+
+                    if (CandidatesList.Count() > 0)
+                    {
+                        createFileImport(CandidatesList);
+                    }
+
+                    Console.WriteLine("");
+                    string s5 = "Processing completed. " + xxx_SysAudit.ProcessedEmails + " New Audits and " + xxx_SysAudit.ProcessedManualEmails + " Manual were processed. Good bye!";
+                    Console.WriteLine("");
+                    Console.SetCursorPosition((Console.WindowWidth - s5.Length) / 2, Console.CursorTop);
+                    Console.WriteLine(s5);
+                    Console.WriteLine("");
+                    Console.WriteLine("################################################################################");
+                    Thread.Sleep(10000);
                 }
+
+
+            }
+            catch (System.Exception err)
+            {
+                throw new CustomException("Processing failed: ", err);
             }
 
-            Console.WriteLine("");
-            Console.WriteLine("");
-            Console.WriteLine("");
-            string s5 = "Processing completed. " + xxx_SysAudit.ProcessedEmails + " New Audits and " + xxx_SysAudit.ProcessedManualEmails + " Manual were processed. Good bye!";
-            Console.WriteLine("");
-            Console.SetCursorPosition((Console.WindowWidth - s5.Length) / 2, Console.CursorTop);
-            Console.WriteLine(s5);
-            Console.WriteLine("");
-            Console.WriteLine("################################################################################");
-            Thread.Sleep(15000);
-
+        }
+        public class CustomException : Exception
+        {
+            public CustomException(string msg, Exception inner) : base(msg, inner) { }
         }
 
         private static int processNormalAudits(List<SysAuditResults> CandidatesList, IEnumerable<MailMessage> messages)
@@ -712,8 +726,10 @@ namespace PRrequests
                     sysAuditResults.aResult = "Pending";
                 }
             }
+        
+           // string[] sCPU = sysAuditResults.cCPU.Split('-');
 
-            sysAuditResults.aResultSummary = "[OS = " + sysAuditResults.cOS + "] - [C" + sysAuditResults.cCPU + " - " + sysAuditResults.cRAM + " - " + sysAuditResults.cHDD + " - [Download Speed = " + sysAuditResults.cInternetDown + " Mbps] - [Upload Speed = " + sysAuditResults.cInternetUp + " Mbps]";
+            sysAuditResults.aResultSummary = "[OS = " + sysAuditResults.cOS + "]" + sysAuditResults.cCPU + " - " + sysAuditResults.cRAM + " - " + sysAuditResults.cHDD + " - [Download Speed = " + sysAuditResults.cInternetDown + " Mbps] - [Upload Speed = " + sysAuditResults.cInternetUp + " Mbps]";
             return sysAuditResults;
 
         }
@@ -837,6 +853,7 @@ namespace PRrequests
             {
                 get
                 {
+
                     return _hdd;
                 }
                 set
@@ -893,23 +910,7 @@ namespace PRrequests
                     string[] tf = value.Split(' ');
                     int idx = 0;
                     _internetUp = tf[idx].ToString();
-                    //if (tf[0] == "" | tf[0] == ":" | tf[0] == "=")
-                    //    idx = 1;
-                    //if(tf[idx].ToString().Length > 2) { 
-                    //    _internetUp = tf[idx].ToString().Substring(0, 3).Replace(".", "").Replace(";", "");
-                    //}
-                    //if (tf[idx].ToString().Length == 2)
-                    //{
-                    //    _internetUp = tf[idx].ToString().Replace(".", "").Replace(";", "");
-                    //}
-                    //if (tf[idx].ToString().Length == 1) {
-                    //    _internetUp = tf[idx].ToString();
-                    //}
-                    //if (tf[idx].ToString().Length > 2)
-                    //{
-                    //    _internetUp = tf[idx].ToString().Substring(0, 3).Replace(".", "").Replace(";", "");
-
-
+               
 
                 }
             }
@@ -1139,95 +1140,42 @@ namespace PRrequests
         {
             try
             {
-
-
-                SmtpClient mySmtpClient = new SmtpClient("secure.emailsrvr.com", 25);
-                mySmtpClient.UseDefaultCredentials = false;
-                System.Net.NetworkCredential basicAuthenticationInfo = new
-                System.Net.NetworkCredential("notify@statesidebpo.com", "W31is+en2016");
-                mySmtpClient.Credentials = basicAuthenticationInfo;
-
-                // add from,to mailaddresses
-                MailAddress from = new MailAddress("notify@statesidebpo.com");
-                MailAddress to = new MailAddress("helpdesk@statesidebpo.com"); //to = new MailAddress("brodriguez@statesidebpo.com"); //
-                MailMessage myMail = new MailMessage(from, to);
-                myMail.Subject = DateTime.Now + " SystemAudit Processing run completed successfully";
-
-                if (isTESTING == true)
+                foreach (SysAuditResults c in CandidatesList)
                 {
-                    to = new MailAddress("brodriguez@statesidebpo.com");
-                    myMail.Subject = "TESTING - " + DateTime.Now + " SystemAudit Processing run completed successfully";
+                    string reason = c.aFailedReason;
 
-                }
-
-                myMail.IsBodyHtml = true;
-
-
-                string bd = "";
-                if (CandidatesList.Count() == 1)
-                {
-                    bd = "<h2> " + CandidatesList.Count() + " Audit was processed</h2>";
-                }
-                else
-                {
-                    bd = "<h2> " + CandidatesList.Count() + " Audits were processed</h2>";
-                }
-
-                if (CandidatesList.Count() != 0)
-                {
-
-                    bd = bd + "<table  width=" + "90%" + "><tbody>" +
-                               "<tr><th bgcolor = " + "'#ff2500'" + " style =" + "'padding: 5px 5px 5px 5px; color: white'" + " > Name </ th >" +
-                               "<th  bgcolor =" + "'#ff2500'" + " style = " + "'padding: 5px 5px 5px 5px;color: white'" + "> Email </ th >" +
-                               "<th  bgcolor =" + "'#ff2500'" + " style = " + "'padding: 5px 5px 5px 5px;color: white'" + "> Status </ th ></ tr >";
-
-
-
-                    foreach (SysAuditResults c in CandidatesList)
+                    if (c.aFailedReason != null)
                     {
-                        string reason = c.aFailedReason;
-
-                        if (c.aFailedReason != null)
-                        {
-                            reason = " - " + c.aFailedReason;
-                        }
-
-                        if (c.needsManualProcessing)
-                        {
-                            bd = bd + "<tr><td align=" + "'center'" + "width=" + "'23%'" + ">" + c.cName + "</td><td align=" + "'center'" + "width=" + "'33%'" + ">" + c.cEmail + "</td><td align=" + "'center'" + " width=" + "'43%'" + ">" + c.aResult + reason + "</td></tr>";
-                            sendMail(c.cEmail, c.attachmentFilename, c.cName);
-                        }
-                        else
-                        {
-                            if (c.aResult == "Fail")
-                            {
-                                bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'43%'" + ">" + c.cEmail + "</td><td  width=" + "'43%'" + "><font color='red'>" + c.aResult + reason + "</font></td></tr>";
-                            }
-                            if (c.aResult == "Pass")
-                            {
-                                bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'28%'" + ">" + c.cEmail + "</td><td ' width=" + "'43%'" + "><font color='green'>" + c.aResult + reason + "</font></td></tr>";
-                            }
-
-                            if (c.aResult == "Pending")
-                            {
-                                bd = bd + "<tr><td  width=" + "'23%'" + ">" + c.cName + "</td><td width=" + "'28%'" + ">" + c.cEmail + "</td><td  width=" + "'43%'" + "><font color='blue'>" + c.aResult + reason + "</font></td></tr>";
-                            }
-
-                            sendMail(c.cEmail, c.attachmentFilename, c.cName);
-                        }
-
+                        reason = " - " + c.aFailedReason;
                     }
 
-                    bd = bd + "</tbody></table>";
-                }
-                myMail.Body = Regex.Replace(bd, @"[^\u0000-\u007F]", " ");
-                mySmtpClient.Send(myMail);
+                    OdbcConnection DbConnection = new OdbcConnection("DSN=QuickBase via QuNect user");
+                    DbConnection.Open();
 
+                    string insert = "insert into bmrksgqsn (Audit Run Date, Candidate Name, Candidate Email, SysAudit Status, Notes, Fail Reason) values(?,?,?,?,?,?)";
+                    OdbcCommand commmand = new OdbcCommand(insert, DbConnection);
+                    OdbcDataReader reader;
+
+                    commmand.Parameters.AddWithValue("@Audit Run Date", OdbcType.DateTime).Value = DateTime.Now.ToLocalTime();//c.auditDate;
+                    commmand.Parameters.AddWithValue("@Candidate Name", OdbcType.VarChar).Value = c.cName;
+                    commmand.Parameters.AddWithValue("@Candidate Email", OdbcType.VarChar).Value = c.cEmail;
+                    commmand.Parameters.AddWithValue("@SysAudit Status", OdbcType.VarChar).Value = c.aResult;
+                    commmand.Parameters.AddWithValue("@Notes", OdbcType.VarChar).Value = c.aResultSummary;
+                    commmand.Parameters.AddWithValue("@Fail Reason", OdbcType.VarChar).Value = c.aFailedReason;
+
+                    //commmand.Parameters.AddWithValue("@Record Owner", OdbcType.VarChar).Value = "TESTING";
+                    //commmand.Parameters.AddWithValue("@Date Created", OdbcType.VarChar).Value = DateTime.Now.ToLocalTime();
+
+                    reader = commmand.ExecuteReader();
+                    DbConnection.Close();
+
+                }
             }
+
             catch (System.Exception ex)
             {
                 throw new ApplicationException
-                  ("Outlook exception has occured: " + ex.Message);
+                  ("Sending to DB Error: " + ex.Message);
             }
         }
 
@@ -1622,6 +1570,9 @@ namespace PRrequests
                 }
 
             }
+
+
+
         }
     }
 }
