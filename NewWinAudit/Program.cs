@@ -13,6 +13,7 @@ using System.IO;
 using System.Net.Mime;
 using System.Threading;
 using System.Globalization;
+using System.Data.Odbc;
 
 namespace NewWinAudit
 {
@@ -77,6 +78,7 @@ namespace NewWinAudit
                     Thread.Sleep(1000);
 
                     sendCompletionNotification(CandidatesList);
+                    sendToQuickBase(CandidatesList);
 
                     if (CandidatesList.Count() > 0)
                     {
@@ -504,21 +506,79 @@ namespace NewWinAudit
         {
             string path = @"\\filesvr4\it\WinAudit\4BitLeverImport\AuditMasterLIVE.csv";
 
-            if (File.Exists(path))
+            if (!isTESTING) {
+                if (File.Exists(path))
+                {
+                    foreach (SysAuditResults c in CandidatesList)
+                    {
+                        if (c.IsManual != true)
+                        {
+                            string line = Convert.ToDateTime(c.auditDate).ToString("g", System.Globalization.CultureInfo.CreateSpecificCulture("en-us")) + "," + c.cName.Replace('Â', ' ') + "," + c.cEmail + "," + c.aResultSummary + "," + c.aResult + "," + Environment.UserName + "," + c.resultSent + ", " + c.aFailedReason + ", " + DateTime.Now;
+                            string createText = line;
+                            File.AppendAllText(path, createText + Environment.NewLine, Encoding.UTF32);
+                        }
+                    }
+
+                }
+            }
+        }
+
+
+        private static void sendToQuickBase(List<SysAuditResults> CandidatesList)
+        {
+            try
             {
                 foreach (SysAuditResults c in CandidatesList)
                 {
-                    if (c.IsManual != true)
-                    {
-                        string line = Convert.ToDateTime(c.auditDate).ToString("g", System.Globalization.CultureInfo.CreateSpecificCulture("en-us")) + "," + c.cName.Replace('Â', ' ') + "," + c.cEmail + "," + c.aResultSummary + "," + c.aResult + "," + Environment.UserName + "," + c.resultSent + ", " + c.aFailedReason + ", " + DateTime.Now;
-                        string createText = line;
-                        File.AppendAllText(path, createText + Environment.NewLine, Encoding.UTF32);
+                    OdbcConnection DbConnection = new OdbcConnection("DSN=QuickBase via QuNect user");
+                    DbConnection.Open();
+
+                    string insert = "insert into bmrksgqsn (Audit Run Date, Candidate Name, Candidate Email, SysAudit Status, Notes, Fail Reason) values(?,?,?,?,?,?)";
+                    OdbcCommand commmand = new OdbcCommand(insert, DbConnection);
+                    OdbcDataReader reader;
+
+                    string fr = "N/A";
+
+                
+
+
+                    commmand.Parameters.AddWithValue("@Audit Run Date", OdbcType.DateTime).Value = Convert.ToDateTime(c.auditDate);
+
+                    commmand.Parameters.AddWithValue("@Candidate Name", OdbcType.VarChar).Value = c.cName;
+
+                    commmand.Parameters.AddWithValue("@Candidate Email", OdbcType.VarChar).Value = c.cEmail;
+
+                    commmand.Parameters.AddWithValue("@SysAudit Status", OdbcType.VarChar).Value = c.aResult;
+                
+                    commmand.Parameters.AddWithValue("@Notes", OdbcType.VarChar).Value =  c.aResultSummary.Replace("(","[").Replace(")","]");
+
+                if (c.aFailedReason == null)
+                {
+                        commmand.Parameters.AddWithValue("@Fail Reason", OdbcType.VarChar).Value = fr;
+
                     }
+                    else
+                    {
+                       
+                        commmand.Parameters.AddWithValue("@Fail Reason", OdbcType.VarChar).Value = c.aFailedReason;
+                    }
+
+                    reader = commmand.ExecuteReader();
+                    DbConnection.Close();
+                    Console.WriteLine("Completed import");
+
                 }
 
+
+            }
+
+            catch (System.Exception ex)
+            {
+                throw new ApplicationException
+                  ("Sending to DB Error: " + ex.Message);
             }
         }
-   
+
         private static SysAuditResults getResultsObject(SysAuditResults sysAuditResults, string l)
         {
          
@@ -737,6 +797,7 @@ namespace NewWinAudit
                         if (cCPU > 1000)
                         {
                             sysAuditResults.CPUaResult = "Pass";
+                            sysAuditResults.cCPU = sysAuditResults.cCPU.Replace("No score given", "5.0");
                         }
                         else
                         {
