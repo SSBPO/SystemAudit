@@ -54,7 +54,7 @@ namespace PRrequests
                     Console.WriteLine("");
 
                     // Check mailbox and get any messages not seen and sent by systemaudit@bit-lever.com
-                    IEnumerable<uint> uids = imapClient.Search(S22.Imap.SearchCondition.Unseen().And(S22.Imap.SearchCondition.From("systemaudit@bit-lever.com")));
+                    IEnumerable<uint> uids = imapClient.Search(SearchCondition.(new DateTime(2017, 3, 10)).And(S22.Imap.SearchCondition.From("systemaudit@bit-lever.com")));
                     IEnumerable<System.Net.Mail.MailMessage> messages = imapClient.GetMessages(uids);
 
 
@@ -76,7 +76,7 @@ namespace PRrequests
                     Console.SetCursorPosition((Console.WindowWidth - sx.Length) / 2, Console.CursorTop);
                     Console.WriteLine(sx);
                     xxx_SysAudit.ProcessedManualEmails = proccessManualAudits(CandidatesList, manualmessages);
-                    Thread.Sleep(1000);
+                    Thread.Sleep(10000);
 
                     sendCompletionNotification(CandidatesList);
 
@@ -777,7 +777,7 @@ namespace PRrequests
 
             // string[] sCPU = sysAuditResults.cCPU.Split('-');
 
-            sysAuditResults.aResultSummary = "[OS = " + sysAuditResults.cOS + "]" + sysAuditResults.cCPU + " - " + sysAuditResults.cRAM + " - " + sysAuditResults.cHDD + " - [Download Speed = " + sysAuditResults.cInternetDown + " Mbps] - [Upload Speed = " + sysAuditResults.cInternetUp + " Mbps]";
+            sysAuditResults.aResultSummary = "[OS = " + sysAuditResults.cOS + "] - " + sysAuditResults.cCPU + " - " + sysAuditResults.cRAM + " - " + sysAuditResults.cHDD + " - [Download Speed = " + sysAuditResults.cInternetDown + " Mbps] - [Upload Speed = " + sysAuditResults.cInternetUp + " Mbps]";
             return sysAuditResults;
 
         }
@@ -3699,68 +3699,14 @@ namespace PRrequests
         {
             try
             {
-                foreach (SysAuditResults c in CandidatesList)
-                {
-                    OdbcConnection DbConnection = new OdbcConnection("DSN=QuickBase via QuNect user");
-                    DbConnection.Open();
-
-                    string insert = "insert into bmrksgqsn (Audit Run Date, Candidate Name, Candidate Email, SysAudit Status, Notes, Fail Reason) values(?,?,?,?,?,?)";
-                    OdbcCommand commmand = new OdbcCommand(insert, DbConnection);
-                    OdbcDataReader reader;
+               
 
 
 
-
-                    commmand.Parameters.AddWithValue("@Audit Run Date", OdbcType.DateTime).Value = DateTime.Now.ToLocalTime();
-
-                    commmand.Parameters.AddWithValue("@Candidate Name", OdbcType.VarChar).Value = c.cName;
-
-                    commmand.Parameters.AddWithValue("@Candidate Email", OdbcType.VarChar).Value = c.cEmail;
-
-                    commmand.Parameters.AddWithValue("@SysAudit Status", OdbcType.VarChar).Value = c.aResult;
-
-                    commmand.Parameters.AddWithValue("@Notes", OdbcType.VarChar).Value = c.aResultSummary;
-
-                    commmand.Parameters.AddWithValue("@Fail Reason", OdbcType.VarChar).Value = c.aFailedReason;
-
-
-                    reader = commmand.ExecuteReader();
-                    DbConnection.Close();
-                    Console.WriteLine("Completed import");
-
-                }
-
-
-                //    foreach (SysAuditResults c in CandidatesList)
-                //    {
-                //        string reason = c.aFailedReason;
-
-                //        if (c.aFailedReason != null)
-                //        {
-                //            reason = " - " + c.aFailedReason;
-                //        }
-
-                //        OdbcConnection DbConnection = new OdbcConnection("DSN=QuickBase via QuNect user");
-                //        DbConnection.Open();
-
-                //        string insert = "insert into bmrksgqsn (Audit Run Date, Candidate Name, Candidate Email, SysAudit Status, Notes, Fail Reason) values(?,?,?,?,?,?)";
-                //        OdbcCommand commmand = new OdbcCommand(insert, DbConnection);
-                //        OdbcDataReader reader;
-
-                //        commmand.Parameters.AddWithValue("@Audit Run Date", OdbcType.DateTime).Value = DateTime.Now.ToLocalTime();//c.auditDate;
-                //        commmand.Parameters.AddWithValue("@Candidate Name", OdbcType.VarChar).Value = c.cName;
-                //        commmand.Parameters.AddWithValue("@Candidate Email", OdbcType.VarChar).Value = c.cEmail;
-                //        commmand.Parameters.AddWithValue("@SysAudit Status", OdbcType.VarChar).Value = c.aResult;
-                //        commmand.Parameters.AddWithValue("@Notes", OdbcType.VarChar).Value = c.aResultSummary;
-                //        commmand.Parameters.AddWithValue("@Fail Reason", OdbcType.VarChar).Value = c.aFailedReason;
-
-                //        Console.WriteLine(insert);
-
-
-                //        reader = commmand.ExecuteReader();
-                //        DbConnection.Close();
-                //        Console.WriteLine("Completed import");
-                //    }
+                  foreach (SysAuditResults c in CandidatesList)
+                  {
+                    Console.WriteLine(c.cName);
+                 }
             }
 
             catch (System.Exception ex)

@@ -25,11 +25,17 @@ namespace NewWinAudit
 
         static void Main(string[] args)
         {
+
+            AppDomain.CurrentDomain.FirstChanceException += (sender, eventArgs) =>
+            {
+                System.Diagnostics.Debug.WriteLine(eventArgs.Exception.ToString());
+            };
+
             string excelLicense = "EQU2-1K6F-UZPP-4MOX";
             SpreadsheetInfo.SetLicense(excelLicense);
 
-            isTESTING = false;
-            //isTESTING = true;
+            //isTESTING = false;
+            isTESTING = true;
 
             Console.WriteLine("");
             Console.WriteLine("");
@@ -45,63 +51,121 @@ namespace NewWinAudit
                 List<SysAuditResults> CandidatesList = new List<SysAuditResults>();
 
 
-                using (S22.Imap.ImapClient imapClient = new S22.Imap.ImapClient("secure.emailsrvr.com", 993, "systemaudit@statesidebpo.com", "G4xxsfsdf$$$-fsdfxG3ffsdafsdfa4!df!!2eX", AuthMethod.Login, true))
+                using (S22.Imap.ImapClient imapClient = new S22.Imap.ImapClient("secure.emailsrvr.com", 993, "systemaudit@statesidebpo.com", "Uhtd5$#8s776fsdfa4!df!!2eX", AuthMethod.Login, true))
                 {
                     string s = "Checking SystemAudits mailbox...";
-                    Console.SetCursorPosition((Console.WindowWidth - s.Length) / 2, Console.CursorTop);
-                    Console.WriteLine(s);
-                    Console.WriteLine("");
+                    write2(s);
 
                     // Check mailbox and get any messages not seen and sent by systemaudit@bit-lever.com
                     IEnumerable<uint> uids = imapClient.Search(S22.Imap.SearchCondition.Unseen().And(S22.Imap.SearchCondition.From("systemaudit@bit-lever.com")));
                     IEnumerable<System.Net.Mail.MailMessage> messages = imapClient.GetMessages(uids);
 
-
                     IEnumerable<uint> manualuids = imapClient.Search(S22.Imap.SearchCondition.Unseen().And(S22.Imap.SearchCondition.From("no-reply@bit-lever.com")));
                     IEnumerable<System.Net.Mail.MailMessage> manualmessages = imapClient.GetMessages(manualuids);
 
-                    Thread.Sleep(1000);
+                    string s2 = "";
 
-                    string s2 = "New Audits to process:  " + messages.Count();
-                    Console.SetCursorPosition((Console.WindowWidth - s2.Length) / 2, Console.CursorTop);
-                    Console.WriteLine(s2);
+                    switch (messages.Count())
+                    {
+                        case 0:
+                            s2 = "There are no Audit to process. Skipped new Audit Processing.";
+                            break;
+                        case 1:
+                            s2 = "There is " + messages.Count() + " new Audit to process. Processing....";
+                            break;
+                        default:
+                            s2 = "There is " + messages.Count() + " new Audit to process. Processing....";
+                            break;
+                    }
+
+                    write2(s2);
                     xxx_SysAudit.ProcessedEmails = processNormalAudits(CandidatesList, messages);
-                    Thread.Sleep(1000);
+
+
+                    Console.WriteLine("");
+              
+                    write2("Processing Completed.");
 
                     Console.WriteLine("");
                     Console.WriteLine("");
+                    Console.WriteLine("");
 
-                    string sx = "Manual Audits to process:  " + manualmessages.Count();
-                    Console.SetCursorPosition((Console.WindowWidth - sx.Length) / 2, Console.CursorTop);
-                    Console.WriteLine(sx);
+                    string sx = "";
+
+                    switch (manualmessages.Count())
+                    {
+                        case 0:
+                            sx = "There are no manual Audit to process. Skipped new Audit Processing.";
+                            break;
+                        case 1:
+                            sx = "There is " + manualmessages.Count() + " manual Audit to process. Processing....";
+                            break;
+                        default:
+                            sx = "There is " + manualmessages.Count() + " manual Audit to process. Processing....";
+                            break;
+                    }
+
+                    write2(sx);
                     xxx_SysAudit.ProcessedManualEmails = proccessManualAudits(CandidatesList, manualmessages);
-                    Thread.Sleep(1000);
+
 
                     sendCompletionNotification(CandidatesList);
                     sendToQuickBase(CandidatesList);
 
-                    if (CandidatesList.Count() > 0)
-                    {
-                        createFileImport(CandidatesList);
-                    }
+                    Console.WriteLine("");
+                    Console.WriteLine("");
+                    Console.WriteLine("");
 
                     Console.WriteLine("");
-                    string s5 = "Processing completed. " + xxx_SysAudit.ProcessedEmails + " New Audits and " + xxx_SysAudit.ProcessedManualEmails + " Manual were processed. Good bye!";
-                    Console.WriteLine("");
-                    Console.SetCursorPosition((Console.WindowWidth - s5.Length) / 2, Console.CursorTop);
-                    Console.WriteLine(s5);
-                    Console.WriteLine("");
-                    Console.WriteLine("################################################################################");
-                    Thread.Sleep(10000);
+                    auditComplete(xxx_SysAudit);
                 }
 
 
             }
             catch (System.Exception err)
             {
+
+                SmtpClient mySmtpClient = new SmtpClient("secure.emailsrvr.com", 25);
+                mySmtpClient.UseDefaultCredentials = false;
+                System.Net.NetworkCredential basicAuthenticationInfo = new System.Net.NetworkCredential("systemaudit@statesidebpo.com", "Uhtd5$#8s776fsdfa4!df!!2eX");
+                mySmtpClient.Credentials = basicAuthenticationInfo;
+
+                MailAddress from = new MailAddress("systemaudit@statesidebpo.com");  
+                MailMessage myMail = new MailMessage("helpdesk@statesidebpo.com", "brodriguez@statesidebpo.com");
+                myMail.IsBodyHtml = true;
+                myMail.Subject = "System audit Error!";
+
+                string body = err.ToString();       
+           
+
+                myMail.Body = @"<htm><body>" + body + "<br> </body></html>";
+                myMail.BodyEncoding = System.Text.Encoding.UTF8;
+                mySmtpClient.Send(myMail);     
+
                 throw new CustomException("Processing failed: ", err);
+
             }
 
+        }
+
+        private static void auditComplete(SystemAudit xxx_SysAudit)
+        {
+            Console.WriteLine("################################################################################");
+     
+            string s5 = "Processing completed. " + xxx_SysAudit.ProcessedEmails + " New Audits and " + xxx_SysAudit.ProcessedManualEmails + " Manual were processed. Good bye!";
+ 
+            Console.SetCursorPosition((Console.WindowWidth - s5.Length) / 2, Console.CursorTop);
+            Console.WriteLine(s5);
+            Console.WriteLine("");
+            Console.WriteLine("################################################################################");
+            Thread.Sleep(10000);
+        }
+
+        private static void write2(string s)
+        {
+            Console.SetCursorPosition((Console.WindowWidth - s.Length) / 2, Console.CursorTop);
+            Console.WriteLine(s);
+           
         }
 
         private static int processNormalAudits(List<SysAuditResults> CandidatesList, IEnumerable<MailMessage> messages)
@@ -161,6 +225,11 @@ namespace NewWinAudit
             }
             catch (System.Exception err)
             {
+
+
+
+         
+
                 throw new CustomException("processNormalAudits Error: ", err);
             }
 
@@ -367,9 +436,7 @@ namespace NewWinAudit
             {
                 worksheet.Cells["C16"].Value = SSBPOsysAuditResults.cCPU.Substring(12, 4).Replace("=", "").Trim().Replace("]", "");
             }
-
-
-
+            
             
             worksheet.Cells["C18"].Value = SSBPOsysAuditResults.cInternetUp.Trim() + " Mbps";
             worksheet.Cells["C19"].Value = SSBPOsysAuditResults.cInternetDown.Trim() + " Mbps";
@@ -523,59 +590,80 @@ namespace NewWinAudit
             }
         }
 
-
         private static void sendToQuickBase(List<SysAuditResults> CandidatesList)
         {
-            try
+
+
+            if (!isTESTING)
             {
-                foreach (SysAuditResults c in CandidatesList)
+
+                try
                 {
-                    OdbcConnection DbConnection = new OdbcConnection("DSN=QuickBase via QuNect user");
-                    DbConnection.Open();
-
-                    string insert = "insert into bmrksgqsn (Audit Run Date, Candidate Name, Candidate Email, SysAudit Status, Notes, Fail Reason) values(?,?,?,?,?,?)";
-                    OdbcCommand commmand = new OdbcCommand(insert, DbConnection);
-                    OdbcDataReader reader;
-
-                    string fr = "N/A";
-
-                
-
-
-                    commmand.Parameters.AddWithValue("@Audit Run Date", OdbcType.DateTime).Value = Convert.ToDateTime(c.auditDate);
-
-                    commmand.Parameters.AddWithValue("@Candidate Name", OdbcType.VarChar).Value = c.cName;
-
-                    commmand.Parameters.AddWithValue("@Candidate Email", OdbcType.VarChar).Value = c.cEmail;
-
-                    commmand.Parameters.AddWithValue("@SysAudit Status", OdbcType.VarChar).Value = c.aResult;
-                
-                    commmand.Parameters.AddWithValue("@Notes", OdbcType.VarChar).Value =  c.aResultSummary.Replace("(","[").Replace(")","]");
-
-                if (c.aFailedReason == null)
-                {
-                        commmand.Parameters.AddWithValue("@Fail Reason", OdbcType.VarChar).Value = fr;
-
-                    }
-                    else
+                    foreach (SysAuditResults c in CandidatesList)
                     {
-                       
-                        commmand.Parameters.AddWithValue("@Fail Reason", OdbcType.VarChar).Value = c.aFailedReason;
+                        OdbcConnection DbConnection = new OdbcConnection("DSN=QuickBase via QuNect user");
+                        DbConnection.Open();
+
+                        string insert = "insert into bmrksgqsn (Audit Run Date, Candidate Name, Candidate Email, SysAudit Status, Notes, Fail Reason) values(?,?,?,?,?,?)";
+                        OdbcCommand commmand = new OdbcCommand(insert, DbConnection);
+                        OdbcDataReader reader;
+
+                        string fr = "N/A";
+
+                        commmand.Parameters.AddWithValue("@Audit Run Date", OdbcType.DateTime).Value = Convert.ToDateTime(c.auditDate);
+
+                        commmand.Parameters.AddWithValue("@Candidate Name", OdbcType.VarChar).Value = c.cName;
+
+                        commmand.Parameters.AddWithValue("@Candidate Email", OdbcType.VarChar).Value = c.cEmail;
+
+                        commmand.Parameters.AddWithValue("@SysAudit Status", OdbcType.VarChar).Value = c.aResult;
+
+                        commmand.Parameters.AddWithValue("@Notes", OdbcType.VarChar).Value = c.aResultSummary.Replace("(", "[").Replace(")", "]");
+
+                        if (c.aFailedReason == null)
+                        {
+                            commmand.Parameters.AddWithValue("@Fail Reason", OdbcType.VarChar).Value = fr;
+
+                        }
+                        else
+                        {
+
+                            commmand.Parameters.AddWithValue("@Fail Reason", OdbcType.VarChar).Value = c.aFailedReason;
+                        }
+
+                        reader = commmand.ExecuteReader();
+                        DbConnection.Close();
+                        Console.WriteLine("Completed import");
+
                     }
 
-                    reader = commmand.ExecuteReader();
-                    DbConnection.Close();
-                    Console.WriteLine("Completed import");
 
                 }
 
+                catch (System.Exception err)
+                {
 
-            }
+                    SmtpClient mySmtpClient = new SmtpClient("secure.emailsrvr.com", 25);
+                    mySmtpClient.UseDefaultCredentials = false;
+                    System.Net.NetworkCredential basicAuthenticationInfo = new System.Net.NetworkCredential("systemaudit@statesidebpo.com", "Uhtd5$#8s776fsdfa4!df!!2eX");
+                    mySmtpClient.Credentials = basicAuthenticationInfo;
 
-            catch (System.Exception ex)
-            {
-                throw new ApplicationException
-                  ("Sending to DB Error: " + ex.Message);
+                    MailAddress from = new MailAddress("systemaudit@statesidebpo.com");
+                    MailMessage myMail = new MailMessage("helpdesk@statesidebpo.com", "helpdesk@statesidebpo.com");
+                    myMail.IsBodyHtml = true;
+                    myMail.Subject = "System audit Error!";
+
+                    string body = err.ToString();
+
+                    myMail.Body = @"<htm><body>" + body + "<br>  <table><tr><td><img src=\"cid:StatetSideLogo\"></td><td><img src=\"cid:BitLeverLogo\"></td></tr></table></body></html>";
+                    myMail.BodyEncoding = System.Text.Encoding.UTF8;
+                    mySmtpClient.Send(myMail);
+                   throw new ApplicationException
+                     ("Sending to DB Error: " + err.Message);
+                }
+
+
+
             }
         }
 
@@ -650,9 +738,9 @@ namespace NewWinAudit
               
                 sysAuditResults.cRAM = l.ToString().Substring(22);
                 string[] cRAMs = sysAuditResults.cRAM.Split('=');
-                string cRAM1 = cRAMs[2].Replace("GB]", "");
+                string cRAM1 = cRAMs[2].Replace("GB]", "").Replace("MB]", "");
 
-                if (Convert.ToInt32(cRAM1) < 2)
+                if (Convert.ToInt32(cRAM1) < 2 | cRAM1.Trim().Length > 2)
                 {
                     sysAuditResults.RAMaResult = "Fail";
                     sysAuditResults.aFailedReason = sysAuditResults.aFailedReason + "/ RAM insufficient ";
@@ -820,9 +908,17 @@ namespace NewWinAudit
             //[Download Speed = 31 Mbps] - 
             //[Upload Speed = 4.99 Mbps]  
 
-         
+            string end = " Mbps]";
 
-            sysAuditResults.aResultSummary = "[OS = " + sysAuditResults.cOS + "] - " + sysAuditResults.cCPU + " - " + sysAuditResults.cRAM + " - " + sysAuditResults.cHDD + " - [Download Speed = " + sysAuditResults.cInternetDown + " Mbps] - [Upload Speed = " + sysAuditResults.cInternetUp + " Mbps]";
+            if (sysAuditResults.cInternetUp != null)
+            {
+                if (sysAuditResults.cInternetUp.Length > 5)
+                {
+                    end = " Kbps]";
+                }
+            }
+
+            sysAuditResults.aResultSummary = "[OS = " + sysAuditResults.cOS + "] - " + sysAuditResults.cCPU + " - " + sysAuditResults.cRAM + " - " + sysAuditResults.cHDD + " - [Download Speed = " + sysAuditResults.cInternetDown + " Mbps] - [Upload Speed = " + sysAuditResults.cInternetUp + end;
             return sysAuditResults;
 
         }
@@ -1168,20 +1264,22 @@ namespace NewWinAudit
             }
 
         }
+
         public static void sendMail(string recipient, string attachmentFilename, string cadidateName)
         {
            
                 SmtpClient mySmtpClient = new SmtpClient("secure.emailsrvr.com", 25);
                 mySmtpClient.UseDefaultCredentials = false;
-                System.Net.NetworkCredential basicAuthenticationInfo = new System.Net.NetworkCredential("systemaudit@statesidebpo.com", "G4xxsfsdf$$$-fsdfxG3ffsdafsdfa4!df!!2eX");
+                System.Net.NetworkCredential basicAuthenticationInfo = new System.Net.NetworkCredential("systemaudit@statesidebpo.com", "Uhtd5$#8s776fsdfa4!df!!2eX");
                 mySmtpClient.Credentials = basicAuthenticationInfo;
 
                 MailAddress from = new MailAddress("systemaudit@statesidebpo.com");
                 MailAddress to = new MailAddress(recipient);
                 MailAddress cc = new MailAddress("recruiters@statesidebpo.com");
-           
+                MailAddress bcc = new MailAddress("brodriguez@statesidebpo.com");
 
-                if (isTESTING)
+
+            if (isTESTING)
                 {
                      to = new MailAddress("brodriguez@statesidebpo.com");
                      cc = new MailAddress("brodriguez@statesidebpo.com");
@@ -1189,14 +1287,16 @@ namespace NewWinAudit
                 else
                 {
                      cc = new MailAddress("recruiters@statesidebpo.com");
-                }       
+                     bcc = new MailAddress("recruiters@statesidebpo.com");
+            }       
 
                 MailMessage myMail = new MailMessage(from, to);
                 myMail.IsBodyHtml = true;
                 myMail.Subject = "System audit results for " + cadidateName;
                 myMail.CC.Add(cc);
+                myMail.Bcc.Add(bcc);
 
-                if (isTESTING)
+            if (isTESTING)
                 {
                     myMail.Subject = "TESTING - System audit results for " + cadidateName;
                 }
@@ -1241,11 +1341,13 @@ namespace NewWinAudit
 
             catch (System.Exception err)
             {
-                throw new CustomException("Sending Individual Emails Results Error: ", err);
+
+                 throw new CustomException("Sending Individual Emails Results Error: ", err);
             }
 
 
         }
+
         private static void sendCompletionNotification(List<SysAuditResults> CandidatesList)
         {
            
@@ -1253,7 +1355,7 @@ namespace NewWinAudit
                 SmtpClient mySmtpClient = new SmtpClient("secure.emailsrvr.com", 25);
                 mySmtpClient.UseDefaultCredentials = false;
                 System.Net.NetworkCredential basicAuthenticationInfo = new
-                System.Net.NetworkCredential("systemaudit@statesidebpo.com", "G4xxsfsdf$$$-fsdfxG3ffsdafsdfa4!df!!2eX");
+                System.Net.NetworkCredential("systemaudit@statesidebpo.com", "Uhtd5$#8s776fsdfa4!df!!2eX");
                 mySmtpClient.Credentials = basicAuthenticationInfo;
 
                 // add from,to mailaddresses
@@ -1271,12 +1373,12 @@ namespace NewWinAudit
 
                 
                 MailMessage myMail = new MailMessage(from, to);
-                myMail.Subject = DateTime.Now + " SystemAudit Processing run completed successfully";
+                myMail.Subject = DateTime.Now.ToString("htt") + " SystemAudit Processing run completed successfully";
                 myMail.CC.Add(cc);
 
                 if (isTESTING)
                 {
-                    myMail.Subject = "TESTING - " + DateTime.Now + " SystemAudit Processing run completed successfully";
+                    myMail.Subject = "TESTING - " + DateTime.Now.ToString("htt") + " SystemAudit Processing run completed successfully";
 
                 }
 
@@ -1357,7 +1459,9 @@ namespace NewWinAudit
             catch (System.Exception err)
             {
                 throw new CustomException("Sending Notification Email Error: ", err);
+
             }
+
         }
 
         private static int getCPU_Score(string model)
@@ -3873,6 +3977,7 @@ namespace NewWinAudit
         public class CustomException : Exception
         {
             public CustomException(string msg, Exception inner) : base(msg, inner) { }
+
         }
         class HtmlToText
         {
